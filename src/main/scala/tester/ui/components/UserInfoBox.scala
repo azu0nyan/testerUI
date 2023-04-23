@@ -5,20 +5,8 @@ import slinky.core._
 import slinky.web.ReactDOM
 import slinky.web.html._
 import slinky.core.annotations.react
-import org.scalajs.dom._
-import slinky.core.facade.Hooks.useState
-import slinky.core.facade.ReactElement
-import typings.antDesignIcons.components.AntdIcon
-import typings.antDesignIconsSvg._
 import typings.antd.antdStrings
 import typings.antd.components.{List => AntList, _}
-import typings.antd.components.Form.{Form => FormItem}
-import typings.antd.libFormFormMod.{FormLayout, useForm}
-import typings.antd.libFormHooksUseFormMod.FormInstance
-import typings.antd.libGridColMod.ColProps
-import typings.rcFieldForm.esInterfaceMod
-import typings.rcFieldForm.esInterfaceMod.{AggregationRule, BaseRule, Rule, RuleObject}
-import typings.rcFieldForm.esUtilsMessagesMod.defaultValidateMessages
 import typings.react.mod.CSSProperties
 import viewData.UserViewData
 

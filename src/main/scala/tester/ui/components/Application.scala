@@ -34,7 +34,7 @@ case class NoUser() extends ApplicationData
       "Войдите",
       state match {
         case LoggedInUserInfo(uvd) =>
-          UserInfoBox(uvd)
+          ApplicationLayout(uvd)
         case NoUser() => LoginForm(new LoginForm.Props(tryLogin = lp => {
             println(lp)
             setState(LoggedInUserInfo(UserViewData("id", lp.login, Some(s"na${lp.login}"), Some(s"la${lp.login}"), Some(s"${lp.login}@abibas.ru"), Seq(), "шкила", Instant.now())))
