@@ -23,22 +23,21 @@ import typings.react.mod.CSSProperties
 
 
 @react object LoginForm {
-  type Props = Unit
+  class Props(val tryLogin: LoginPassword => Unit)
 
-  class Values(val login: String, val password: String) extends js.Object
+  class LoginPassword(val login: String, val password: String) extends js.Object
 
+  val component = FunctionalComponent[Props] { props =>
+    val form: FormInstance[LoginPassword] = useForm[LoginPassword]().head
 
-  val component = FunctionalComponent[Props] { _ =>
-    val form: FormInstance[Values] = useForm[Values]().head
-
-    Form[Values]()
+    Form[LoginPassword]()
       .form(form)
       .name("loginForm")
       .labelCol(ColProps().setSpan(5))
       .wrapperCol(ColProps().setSpan(12))
       .style(CSSProperties().setMaxWidth("600"))
       //      .layout(FormLayout.horizontal)
-      .onFinish(store => console.log(s"sadsad ${store.password} ${store.login}"))(
+      .onFinish(props.tryLogin)(
         FormItem()
           .label("Логин")
           .name("login")

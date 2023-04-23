@@ -9,13 +9,16 @@ import slinky.core.facade.ReactElement
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
+import viewData._
+
+import java.time.Instant
 
 @JSImport("antd/dist/antd.css", JSImport.Default)
 @js.native
 object CSS extends js.Any
 
 sealed trait ApplicationData
-case class LoggedInUserInfo() extends ApplicationData
+case class LoggedInUserInfo(userViewData: UserViewData) extends ApplicationData
 case class NoUser() extends ApplicationData
 
 
@@ -24,13 +27,19 @@ case class NoUser() extends ApplicationData
   type State = ApplicationData
   private val css = CSS
 
-
   override def initialState = NoUser()
 
   override def render(): ReactElement = {
     div(
       "Войдите",
-      LoginForm()
+      state match {
+        case LoggedInUserInfo(uvd) =>
+          UserInfoBox(uvd)
+        case NoUser() => LoginForm(new LoginForm.Props(tryLogin = lp => {
+            println(lp)
+            setState(LoggedInUserInfo(UserViewData("id", lp.login, Some(s"na${lp.login}"), Some(s"la${lp.login}"), Some(s"${lp.login}@abibas.ru"), Seq(), "шкила", Instant.now())))
+        }))
+      }
     )
   }
 }
