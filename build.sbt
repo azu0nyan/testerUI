@@ -51,6 +51,20 @@ lazy val npmDeps: Project => Project =
     )
   )
 
+lazy val withCssLoading: Project => Project =
+  _.settings(
+    /* custom webpack file to include css */
+    webpackConfigFile := Some((ThisBuild / baseDirectory).value / "custom.webpack.config.js"),
+    Compile / npmDevDependencies ++= Seq(
+      "webpack-merge" -> "5.8.0",
+      "css-loader" -> "6.7.2",
+      "style-loader" -> "3.3.1",
+      "file-loader" -> "6.2.0",
+      "url-loader" -> "4.1.1"
+    )
+  )
+
+
 
 // Define task to  copy html files
 lazy val copyJS = taskKey[Unit]("Copy js")
@@ -68,4 +82,4 @@ copyJS := {
 
 
 
-lazy val root = (project in file(".")).configure(baseSettings, basicLibs, npmDeps)
+lazy val root = (project in file(".")).configure(baseSettings, basicLibs, npmDeps, withCssLoading)
