@@ -20,7 +20,7 @@ import java.time.Instant
 object CSS extends js.Any
 
 sealed trait ApplicationData
-case class LoggedInUserInfo(userViewData: UserViewData) extends ApplicationData
+case class LoggedInUser(token:String, userViewData: UserViewData) extends ApplicationData
 case class NoUser() extends ApplicationData
 
 
@@ -42,7 +42,7 @@ case class NoUser() extends ApplicationData
   def tryLogin(lp: LoginForm.LoginPassword): Unit = {
     sendRequest(Login, LoginRequest(lp.login, lp.password))(onComplete = {
       case LoginSuccessResponse(token: String, userData: UserViewData) =>
-        setState(LoggedInUserInfo(UserViewData("id", lp.login, Some(s"na${lp.login}"), Some(s"la${lp.login}"), Some(s"${lp.login}@abibas.ru"), Seq(), "шкила", Instant.now())))
+        setState(LoggedInUser(token, userData))
       case LoginFailureUserNotFoundResponse() =>
         showError(s"Неизвестный логин")
       case LoginFailureWrongPasswordResponse() =>
@@ -58,8 +58,8 @@ case class NoUser() extends ApplicationData
   override def render(): ReactElement = {
     div(
       state match {
-        case LoggedInUserInfo(uvd) =>
-          CoursesListLayout(uvd)
+        case l:LoggedInUser =>
+          UserAppLayout(l)
         case NoUser() => LoginForm(new LoginForm.Props(tryLogin = tryLogin))
       }
     )
