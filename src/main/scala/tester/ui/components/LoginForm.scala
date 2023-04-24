@@ -35,7 +35,7 @@ import typings.react.mod.CSSProperties
       .name("loginForm")
       .labelCol(ColProps().setSpan(5))
       .wrapperCol(ColProps().setSpan(12))
-      .style(CSSProperties().setMaxWidth("600"))
+      .style(CSSProperties().setMaxWidth("300"))
       //      .layout(FormLayout.horizontal)
       .onFinish(props.tryLogin)(
         FormItem()
@@ -60,7 +60,7 @@ import typings.react.mod.CSSProperties
           ),
         FormItem()
           .wrapperCol(ColProps().setOffset(5).setSpan(12))
-          .name("Submit")(Button().htmlType(antdStrings.submit).`type`(antdStrings.primary)("Log in"))
+          .name("Submit")(Button().htmlType(antdStrings.submit).`type`(antdStrings.primary)("Войти"))
       )
 
 
