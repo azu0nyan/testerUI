@@ -7,7 +7,7 @@ import scala.scalajs.js
 import slinky.core._
 import slinky.web.html._
 import slinky.core.annotations.react
-import slinky.core.facade.Hooks.useState
+import slinky.core.facade.Hooks.{useEffect, useState}
 import tester.ui.requests.Helpers.sendRequest
 import typings.antd.antdStrings.dark
 import typings.antd.{antdStrings, libSpaceMod}
@@ -64,12 +64,13 @@ import scala.collection.immutable.{AbstractSeq, LinearSeq}
 
     val (coursesList, setCoursesList) = useState[Seq[CourseInfoViewData]](Seq())
     val (selectedCourse, setSelectedCourse) = useState[Option[CourseInfoViewData]](None)
-
-    sendRequest(GetCoursesList, clientRequests.RequestCoursesList(props.loggedInUser.token))(onComplete = {
-      case clientRequests.GetCoursesListSuccess(courses) =>
-        setCoursesList(courses.existing)
-      case clientRequests.GetCoursesListFailure(fal) => //todo
-    })
+    useEffect(() => {
+      sendRequest(GetCoursesList, clientRequests.RequestCoursesList(props.loggedInUser.token))(onComplete = {
+        case clientRequests.GetCoursesListSuccess(courses) =>
+          setCoursesList(courses.existing)
+        case clientRequests.GetCoursesListFailure(fal) => //todo
+      })
+    }, Seq())
 
     Layout()(
       leftSider(coursesList, x => setSelectedCourse(Some(x))),
