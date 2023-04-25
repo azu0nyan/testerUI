@@ -54,7 +54,7 @@ case class NoUser() extends ApplicationData
     div(
       state match {
         case l:LoggedInUser =>
-          UserAppLayout(l)
+          UserAppLayout(l, logout = () => setState(NoUser()))
         case NoUser() => LoginForm(new LoginForm.Props(tryLogin = tryLogin))
       }
     )

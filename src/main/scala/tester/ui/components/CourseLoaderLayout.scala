@@ -15,7 +15,7 @@ import typings.antd.components.{List => AntList, _}
 import viewData.{CourseInfoViewData, PartialCourseViewData}
 
 
-@react object CourseLayout {
+@react object CourseLoaderLayout {
   case class Props(loggedInUser: LoggedInUser, courseInfo: CourseInfoViewData)
 
   val component = FunctionalComponent[Props] { props =>

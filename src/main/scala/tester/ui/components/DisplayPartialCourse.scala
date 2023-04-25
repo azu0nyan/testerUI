@@ -40,7 +40,7 @@ import viewData.{CourseInfoViewData, PartialCourseViewData, ProblemRefViewData, 
       selectedProblem match {
         case Some(problemRef) =>
           loadedProblems.get(problemRef.templateAlias) match {
-            case Some(loadedData) => div(loadedData.toString)
+            case Some(loadedData) => DisplayProblem(props.loggedInUser, loadedData)
             case None =>
               ProblemLoader(props.loggedInUser, problemRef.problemId, p => loadedProblem(problemRef, p))
           }

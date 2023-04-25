@@ -7,11 +7,12 @@ import slinky.core.annotations.react
 import slinky.core.facade.Hooks.useState
 import typings.antd.{antdStrings, libSpaceMod}
 import typings.antd.components.{List => AntList, _}
+import typings.csstype.mod.FloatProperty
 import typings.react.mod.CSSProperties
 import viewData.{CourseInfoViewData, PartialCourseViewData, ProblemRefViewData, UserViewData}
 
 @react object UserAppLayout {
-  case class Props(loggedInUser: LoggedInUser)
+  case class Props(loggedInUser: LoggedInUser, logout: () => Unit)
 
 
   def sizePair(x: Double, y: Double) = scala.scalajs.js.|.from[js.Tuple2[libSpaceMod.SpaceSize, libSpaceMod.SpaceSize], js.Tuple2[libSpaceMod.SpaceSize, libSpaceMod.SpaceSize], libSpaceMod.SpaceSize](js.Tuple2(scala.scalajs.js.|.from(x), scala.scalajs.js.|.from(y)))
@@ -28,9 +29,13 @@ import viewData.{CourseInfoViewData, PartialCourseViewData, ProblemRefViewData, 
       .size(sizePair(0, 48))(
         Layout()
         (
-          Layout.Header().style(CSSProperties().setHeight(64d))(h1("Tester")),
+          Layout.Header().style(CSSProperties().setHeight(64d))(
+            Button()
+              .style(CSSProperties().setFloat(FloatProperty.right))
+              .onClick(_ => props.logout())("Выход")
+          ),
           selectedCourse match {
-            case Some(course) => CourseLayout(props.loggedInUser, course)
+            case Some(course) => CourseLoaderLayout(props.loggedInUser, course)
             case None => CourseSelectionLayout(loggedInUser = props.loggedInUser, onSelected = s => setSelectedCourse(Some(s)))
           },
           Layout.Footer(i("Tester(c) 2049-present")),
