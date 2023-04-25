@@ -11,6 +11,9 @@ import slinky.core.annotations.react
 import slinky.core.facade.Hooks.{useEffect, useState}
 import tester.ui.components.DisplayPartialCourse.LoadedProblemData
 import typings.antd.components.{List => AntList, _}
+import typings.reactAce.components.{Ace, ReactAce}
+import typings.reactAce.libAceMod.IAceEditorProps
+import typings.aceBuilds.aceBuildsStrings.theme
 import viewData.AnswerViewData
 
 import java.time.Instant
@@ -26,16 +29,24 @@ import java.time.Instant
     class SetInner(val __html: String) extends js.Object
 
     val pvd = props.loadedData.pvd
-    pvd.answers.head.status
+
     div(
       h1(pvd.title),
       //score
       div(dangerouslySetInnerHTML := new SetInner(pvd.problemHtml)),
       input(pvd.answerFieldType, scala.Option.when(props.loadedData.answerInField.nonEmpty)(props.loadedData.answerInField)),
+      diaplayProgramInput(),
       displayAnswers(pvd.answers)
 
     )
   }
+
+  def diaplayProgramInput() = Ace().mode(js.|.from("java")).theme("github")
+    .onChange((s, e) => println(s + " " + e.toString))
+    .name(s"")
+    .value("init")
+    .build
+
 
   class TableItem(val key: Int, val time: Instant, val score: Option[ProblemScore], val message: String, val review: Option[String], val answerText: String)
   def toTableItem(awd: AnswerViewData, id: Int): TableItem = new TableItem(id, awd.answeredAt, awd.score, awd.status.toString, None, awd.answerText) //todo
@@ -45,7 +56,6 @@ import java.time.Instant
     else {
       import typings.antd.libTableInterfaceMod.{ColumnGroupType, ColumnType}
       section(
-        h2("Ответы"),
         Table[TableItem]
           .bordered(true)
           //        .dataSourceVarargs(toTableItem(a.head, 1))
@@ -53,7 +63,7 @@ import java.time.Instant
           .columnsVarargs(
             ColumnType[TableItem]()
               .setTitle("№")
-              .setDataIndex("id")
+              .setDataIndex("id ")
               .setKey("id")
               .setRender((_, tableItem, _) => build(p(tableItem.key))),
             ColumnType[TableItem]()

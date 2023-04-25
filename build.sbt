@@ -55,7 +55,10 @@ lazy val npmDeps: Project => Project =
       "@types/react-dom" -> "16.9.8",
       "csstype" -> "2.6.11",
       "@types/prop-types" -> "15.7.3",
-      "antd" -> "4.9.4"
+      //
+      "antd" -> "4.9.4",
+      "react-ace" -> "10.1.0",
+      "ace-builds" -> "1.18.0",
     )
   )
 
