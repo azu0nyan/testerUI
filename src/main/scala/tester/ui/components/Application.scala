@@ -31,12 +31,7 @@ case class NoUser() extends ApplicationData
 
   override def initialState = NoUser()
 
-  import typings.antd.libNotificationMod.{ArgsProps, IconType, default => Notification}
-  def showError(message:String) = renderNotification(message, IconType.error)
-  def showSuccess(message:String) = renderNotification(message, IconType.success)
-  def renderNotification(message:String, iconType: IconType) = {
-    Notification.open(ArgsProps(message = message).setType(iconType))
-  }
+  
 
 
   def tryLogin(lp: LoginForm.LoginPassword): Unit = {
@@ -44,13 +39,13 @@ case class NoUser() extends ApplicationData
       case LoginSuccessResponse(token: String, userData: UserViewData) =>
         setState(LoggedInUser(token, userData))
       case LoginFailureUserNotFoundResponse() =>
-        showError(s"Неизвестный логин")
+        Notifications.showError(s"Неизвестный логин")
       case LoginFailureWrongPasswordResponse() =>
-        showError(s"Неизвестный пароль")
+        Notifications.showError(s"Неизвестный пароль")
       case LoginFailureUnknownErrorResponse() =>
-        showError(s"Ошибка 501")
+        Notifications.showError(s"Ошибка 501")
     }, onFailure = x => {
-      showError(s"Ошибка 404")
+      Notifications.showError(s"Ошибка 404")
       x.printStackTrace()
     })
   }

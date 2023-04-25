@@ -39,7 +39,7 @@ import typings.react.mod.CSSProperties
       //      .layout(FormLayout.horizontal)
       .onFinish(props.tryLogin)(
         FormItem()
-          .label("Ло гин")
+          .label("Логин")
           .name("login")
           .rules(
             js.Array[Rule](

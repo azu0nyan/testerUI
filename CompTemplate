@@ -1,0 +1,20 @@
+package tester.ui.components
+
+import scala.scalajs.js
+import slinky.core._
+import slinky.web.html._
+import slinky.core.annotations.react
+import slinky.core.facade.Hooks.{useEffect, useState}
+
+@react object MyComponent {
+  case class Props()
+
+  val component = FunctionalComponent[Props] { props =>
+    val (name, setName) = useState[T](t)
+    
+    
+    useEffect(() => {})
+
+    div()
+  }
+}

@@ -30,7 +30,7 @@ import viewData.{CourseInfoViewData, PartialCourseViewData, ProblemRefViewData, 
         (
           Layout.Header().style(CSSProperties().setHeight(64d))(h1("Tester")),
           selectedCourse match {
-            case Some(course) => div(course.toString)
+            case Some(course) => CourseLayout(props.loggedInUser, course)
             case None => CourseSelectionLayout(loggedInUser = props.loggedInUser, onSelected = s => setSelectedCourse(Some(s)))
           },
           Layout.Footer(i("Tester(c) 2049-present")),
