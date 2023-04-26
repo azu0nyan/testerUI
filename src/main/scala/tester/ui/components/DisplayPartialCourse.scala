@@ -40,7 +40,12 @@ import viewData.{CourseInfoViewData, PartialCourseViewData, ProblemRefViewData, 
       selectedProblem match {
         case Some(problemRef) =>
           loadedProblems.get(problemRef.templateAlias) match {
-            case Some(loadedData) => DisplayProblem(props.loggedInUser, loadedData)
+            case Some(loadedData) => DisplayProblem(props.loggedInUser, loadedData, () => {
+              sendRequest(clientRequests.GetProblemData, clientRequests.GetProblemDataRequest(props.loggedInUser.token, problemRef.problemId))(onComplete = {
+                case clientRequests.GetProblemDataSuccess(pwd) => loadedProblem(problemRef, pwd)
+                case clientRequests.UnknownGetProblemDataFailure() => Notifications.showError(s"Не могу загрузить задачу")
+              })
+            })
             case None =>
               ProblemLoader(props.loggedInUser, problemRef.problemId, p => loadedProblem(problemRef, p))
           }
@@ -51,6 +56,8 @@ import viewData.{CourseInfoViewData, PartialCourseViewData, ProblemRefViewData, 
 //      Layout.Sider()
     )
   }
+
+
 
 
   @react object ProblemLoader {
