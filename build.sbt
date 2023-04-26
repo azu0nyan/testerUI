@@ -59,6 +59,7 @@ lazy val npmDeps: Project => Project =
       "antd" -> "4.9.4",
       "react-ace" -> "10.1.0",
       "ace-builds" -> "1.18.0",
+      "better-react-mathjax" -> "2.0.2"
     )
   )
 

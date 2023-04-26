@@ -8,6 +8,9 @@ import slinky.core.annotations.react
 import org.scalajs.dom._
 import slinky.core.facade.ReactElement
 import tester.ui.requests.Helpers.sendRequest
+import typings.betterReactMathjax.components.MathJaxContext
+import typings.betterReactMathjax.mathJaxContextMathJaxContextMod.MathJaxContextProps
+import typings.betterReactMathjax.mathJaxContextMod
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSImport
@@ -20,7 +23,7 @@ import java.time.Instant
 object CSS extends js.Any
 
 sealed trait ApplicationData
-case class LoggedInUser(token:String, userViewData: UserViewData) extends ApplicationData
+case class LoggedInUser(token: String, userViewData: UserViewData) extends ApplicationData
 case class NoUser() extends ApplicationData
 
 
@@ -30,9 +33,6 @@ case class NoUser() extends ApplicationData
   private val css = CSS
 
   override def initialState = NoUser()
-
-  
-
 
   def tryLogin(lp: LoginForm.LoginPassword): Unit = {
     sendRequest(Login, LoginRequest(lp.login, lp.password))(onComplete = {
@@ -51,13 +51,17 @@ case class NoUser() extends ApplicationData
   }
 
   override def render(): ReactElement = {
-    div(
-      state match {
-        case l:LoggedInUser =>
-          UserAppLayout(l, logout = () => setState(NoUser()))
-        case NoUser() => LoginForm(new LoginForm.Props(tryLogin = tryLogin))
-      }
-    )
+    
+    mathJaxContextMod.MathJaxContext.apply(MathJaxContextProps.configMathJax3Configundef)(
+      div(
+        //      MathJaxContext.configMathJax3Configundef.build,
+        state match {
+          case l: LoggedInUser =>
+            UserAppLayout(l, logout = () => setState(NoUser()))
+          case NoUser() => LoginForm(new LoginForm.Props(tryLogin = tryLogin))
+        }
+
+      ))
   }
 }
 

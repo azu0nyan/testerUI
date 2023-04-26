@@ -14,6 +14,10 @@ import typings.antd.components.{List => AntList, _}
 import typings.reactAce.components.{Ace, ReactAce}
 import typings.reactAce.libAceMod.IAceEditorProps
 import typings.aceBuilds.aceBuildsStrings.theme
+import typings.betterReactMathjax.components.MathJaxContext.configMathJax3Configundef
+import typings.betterReactMathjax.components.{MathJax, MathJaxContext}
+import typings.betterReactMathjax.mathJaxContextMathJaxContextMod.MathJaxContextProps
+import typings.betterReactMathjax.mathJaxContextMod
 import viewData.AnswerViewData
 
 import java.time.Instant
@@ -21,6 +25,7 @@ import java.time.Instant
 
 @react object DisplayProblem {
   case class Props(loggedInUser: LoggedInUser, loadedData: LoadedProblemData)
+
 
   val component = FunctionalComponent[Props] { props =>
     //    val (name, setName) = useState[T](t)
@@ -32,7 +37,11 @@ import java.time.Instant
 
     div(
       h1(pvd.title),
+      MathJax(div(dangerouslySetInnerHTML := new SetInner(pvd.problemHtml))),
       //score
+      //      MathJaxContext.configMathJax3Configundef.build,
+      //      MathJax(div(dangerouslySetInnerHTML := new SetInner(pvd.problemHtml))),
+
       div(dangerouslySetInnerHTML := new SetInner(pvd.problemHtml)),
       input(pvd.answerFieldType, scala.Option.when(props.loadedData.answerInField.nonEmpty)(props.loadedData.answerInField)),
       diaplayProgramInput(),
@@ -59,7 +68,7 @@ import java.time.Instant
         Table[TableItem]
           .bordered(true)
           //        .dataSourceVarargs(toTableItem(a.head, 1))
-          .dataSourceVarargs(a.zipWithIndex.map{case (ans, i) => toTableItem(ans, i)} : _ *)
+          .dataSourceVarargs(a.zipWithIndex.map { case (ans, i) => toTableItem(ans, i) }: _ *)
           .columnsVarargs(
             ColumnType[TableItem]()
               .setTitle("№")
