@@ -27,8 +27,21 @@ import viewData.{CourseInfoViewData, PartialCourseViewData, ProblemRefViewData, 
     useEffect(() => {})
 
 
-    def loadedProblem(ref: ProblemRefViewData, problemViewData: ProblemViewData) : Unit  = {
-      setLoadedProblems(old => old + (ref.templateAlias -> LoadedProblemData(problemViewData, "")))
+    def onProblemLoaded(ref: ProblemRefViewData, problemViewData: ProblemViewData) : Unit  = {
+      println(s"Problem loaded")
+      setLoadedProblems(old =>      {
+        old.get(ref.templateAlias) match {
+          case Some(loadedData) => old + (ref.templateAlias -> loadedData.copy(pvd = problemViewData))
+          case None => old + (ref.templateAlias -> LoadedProblemData(problemViewData, problemViewData.answers.headOption.map(_.answerText).getOrElse("")))
+        }
+      })
+    }
+
+    def saveAnswer(ref: ProblemRefViewData, newAnswer: String): Unit = {
+      println(s"Saving answer $newAnswer")
+      setLoadedProblems(old =>
+        old + (ref.templateAlias -> old(ref.templateAlias).copy(answerInField = newAnswer))
+      )
     }
 
     Layout()(
@@ -42,12 +55,12 @@ import viewData.{CourseInfoViewData, PartialCourseViewData, ProblemRefViewData, 
           loadedProblems.get(problemRef.templateAlias) match {
             case Some(loadedData) => DisplayProblem(props.loggedInUser, loadedData, () => {
               sendRequest(clientRequests.GetProblemData, clientRequests.GetProblemDataRequest(props.loggedInUser.token, problemRef.problemId))(onComplete = {
-                case clientRequests.GetProblemDataSuccess(pwd) => loadedProblem(problemRef, pwd)
+                case clientRequests.GetProblemDataSuccess(pwd) => onProblemLoaded(problemRef, pwd)
                 case clientRequests.UnknownGetProblemDataFailure() => Notifications.showError(s"Не могу загрузить задачу")
               })
-            })
+            }).withKey(problemRef.problemId)
             case None =>
-              ProblemLoader(props.loggedInUser, problemRef.problemId, p => loadedProblem(problemRef, p))
+              ProblemLoader(props.loggedInUser, problemRef.problemId, p => onProblemLoaded(problemRef, p))
           }
         case None => div(props.partialCourse.courseData.fullHtml(Map()))
       }

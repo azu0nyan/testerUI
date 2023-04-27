@@ -18,13 +18,18 @@ import typings.antd.components.{List => AntList, _}
 import typings.reactAce.components.{Ace, ReactAce}
 import typings.reactAce.libAceMod.IAceEditorProps
 import typings.aceBuilds.aceBuildsStrings.theme
-import typings.antd.antdStrings.primary
+import typings.antd.antdStrings.{primary, topRight}
 import typings.betterReactMathjax.components.MathJaxContext.configMathJax3Configundef
 import typings.betterReactMathjax.components.{MathJax, MathJaxContext}
 import typings.betterReactMathjax.mathJaxContextMathJaxContextMod.MathJaxContextProps
 import typings.betterReactMathjax.mathJaxContextMod
 import viewData.AnswerViewData
 import clientRequests._
+import slinky.core.facade.{React, ReactElement}
+import tester.ui.Storage
+import typings.antDesignIcons.components.AntdIcon
+import typings.antDesignIconsSvg.esAsnDownloadOutlinedMod
+import typings.reactAce.libAceMod
 
 import java.time.Instant
 
@@ -34,16 +39,19 @@ import java.time.Instant
 
 
   val component = FunctionalComponent[Props] { props =>
-    val (currentAnswer, setCurrentAnswer) = useState[String]("")
-    useEffect(() => {})
+    //    val (currentAnswer, saveCurrentAnswer) = useState[String](props.loadedData.answerInField)
+    //
+    //    useEffect(() => {
+    //
+    //    }, Seq())
 
     class SetInner(val __html: String) extends js.Object
 
     val pvd = props.loadedData.pvd
 
 
-    def submitAnswer(): Unit = {
-      sendRequest(clientRequests.SubmitAnswer, clientRequests.SubmitAnswerRequest(props.loggedInUser.token, pvd.problemId, currentAnswer))(onComplete = {
+    def submitAnswer(answer: String): Unit = {
+      sendRequest(clientRequests.SubmitAnswer, clientRequests.SubmitAnswerRequest(props.loggedInUser.token, pvd.problemId, answer))(onComplete = {
         case ProblemNotFound() => Notifications.showError("Задача не найдена")
         case AlreadyVerifyingAnswer() => Notifications.showWarning("Ответ на эту задачу уже проверяется, наберитесь терпения.")
         case MaximumAttemptsLimitExceeded(attempts: Int) => Notifications.showError(s"Максимальное количество попыток $attempts превышено.")
@@ -52,34 +60,119 @@ import java.time.Instant
         case RequestSubmitAnswerFailure(_) => Notifications.showError(s"Ошибка 501")
         case UserCourseWithProblemNotFound() => Notifications.showError(s"Курс не найден")
         case ProblemIsNotFromUserCourse() => Notifications.showError(s"Задача не из вашего курса")
-        case  AnswerSubmitted(avd:AnswerViewData) => answerSubmitSuccess(avd)
+        case AnswerSubmitted(avd: AnswerViewData) => answerSubmitSuccess(avd)
       })
     }
-    
-    def answerSubmitSuccess(avd: AnswerViewData) : Unit = avd match {
+
+    def answerSubmitSuccess(avd: AnswerViewData): Unit = avd match {
       case AnswerViewData(answerId, problemId, answerText, answeredAt, status) =>
-        
+
     }
 
     div(
       h1(pvd.title),
       MathJax(div(dangerouslySetInnerHTML := new SetInner(pvd.problemHtml))),
       //score
-      displayAnswerField(pvd.answerFieldType, currentAnswer, setCurrentAnswer, () => submitAnswer()),
+      displayAnswerField(pvd.problemId, pvd.answerFieldType, props.loadedData.answerInField, s => submitAnswer(s)),
       displayAnswers(pvd.answers)
 
     )
   }
 
-  def langToAceName(p: ProgrammingLanguage): String = p match {
-    case ProgrammingLanguage.Java => "java"
-    case ProgrammingLanguage.Haskell => "haskell"
-    case ProgrammingLanguage.Scala => "scala"
-    case ProgrammingLanguage.Kojo => "scala"
-    case ProgrammingLanguage.Cpp => "cpp" //todo check
+
+  @react object ProgramAceEditor {
+    case class Props(uniqueId: String, initialValue: String, allowedLanguages: Seq[ProgrammingLanguage])
+
+    def langToAceName(p: ProgrammingLanguage): String = p match {
+      case ProgrammingLanguage.Java => "java"
+      case ProgrammingLanguage.Haskell => "haskell"
+      case ProgrammingLanguage.Scala => "scala3"
+      case ProgrammingLanguage.Kojo => "scala"
+      case ProgrammingLanguage.Cpp => "c_cpp"
+    }
+    def aceNameToLang(p:String ): ProgrammingLanguage = p match {
+      case  "java" => ProgrammingLanguage.Java
+      case  "haskell" => ProgrammingLanguage.Haskell
+      case  "scala" => ProgrammingLanguage.Kojo
+      case  "scala3" => ProgrammingLanguage.Scala
+      case  "c_cpp" => ProgrammingLanguage.Cpp
+    }
+
+    def langToDisplayName(p: ProgrammingLanguage): String = p match {
+      case ProgrammingLanguage.Java => "java"
+      case ProgrammingLanguage.Haskell => "haskell"
+      case ProgrammingLanguage.Scala => "scala3"
+      case ProgrammingLanguage.Kojo => "Kojo(scala)"
+      case ProgrammingLanguage.Cpp => "c++"
+    }
+
+    val aceThemes = Seq(
+      "monokai",
+      "github",
+      "tomorrow",
+      "kuroir",
+      "twilight",
+      "xcode",
+      "textmate",
+      "solarized_dark",
+      "solarized_light",
+      "terminal")
+
+    val component = FunctionalComponent[Props] { props =>
+
+      import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
+      import io.circe._, io.circe.parser._
+      import io.circe.generic.auto._, io.circe.syntax._
+
+      val toParse = Storage.readUserAnswer(props.uniqueId) match {
+        case Some(answ) => answ
+        case None => props.initialValue
+      }
+      val (program, lang) =
+        decode[ProgramAnswer](toParse) match {
+          case Left(error) => (toParse, props.allowedLanguages.headOption.getOrElse(ProgrammingLanguage.Java))
+          case Right(ProgramAnswer(program, programmingLanguage)) => (program, programmingLanguage)
+        }
+
+      val (language, setLanguage) = useState[ProgrammingLanguage](lang)
+
+      val selectLangMenu = Select[String]
+        .defaultValue(langToAceName(language))
+        .onChange((newVal, _) => setLanguage(aceNameToLang(newVal)))(
+          props.allowedLanguages.map(lang => Select.Option(langToAceName(lang))(langToDisplayName(lang)))
+        )
+
+
+
+      val (theme, setTheme) = useState[String]("github")
+
+      val aceRef = React.createRef[libAceMod.default]
+      useEffect(() => {
+        println(s"render $language")
+        Storage.setUserAnswer(props.uniqueId, ProgramAnswer(program, language).asJson.noSpaces)
+        () => {
+          println("cle1an")
+        }
+      })
+
+
+
+      div(selectLangMenu,
+        Ace()
+          .mode(js.|.from(langToAceName(language)))
+          .theme(theme)
+          .onChange((s, e) => Storage.setUserAnswer(props.uniqueId, ProgramAnswer(s, language).asJson.noSpaces))
+          .name(props.uniqueId)
+          .value(program)
+          .withRef(aceRef)
+          .build,
+        Button()("Ответить").`type`(primary).onClick(_ => println("sub")) //todo
+      )
+    }
   }
 
-  def displayAnswerField(af: AnswerField, currentAnswer: String, setCurrentAnswer: String => Unit, submit: () => Unit) = div(af match {
+
+  def displayAnswerField(uid: String, af: AnswerField, currentAnswer: String, submit: String => Unit) = div(af match {
     case AnswerField.DoubleNumberField(questionText) =>
       div(Input().value(currentAnswer))
     //      Input().value(currentText.getOrElse("").asInstanceOf[String])
@@ -90,26 +183,13 @@ import java.time.Instant
     case AnswerField.ProgramInTextField(questionText, allowedLanguages, initialProgram) =>
       div(
         p(questionText), //todo innerhtml?
-        diaplayProgramInput(allowedLanguages.headOption.getOrElse(ProgrammingLanguage.Java), if (currentAnswer.nonEmpty) currentAnswer else initialProgram.getOrElse(""), setCurrentAnswer)
+        ProgramAceEditor(uid, if (currentAnswer.nonEmpty) currentAnswer else initialProgram.getOrElse(""), allowedLanguages)
       )
     case AnswerField.SelectOneField(questionText, variants) => div(Input().value(currentAnswer))
     case AnswerField.SelectManyField(questionText, variants) => div(Input().value(currentAnswer))
   },
-    Button()("Ответить").`type`(primary).onClick(_ => submit())
-  )
 
-  def diaplayProgramInput(lang: ProgrammingLanguage, value: String, setCurrentAnswer: String => Unit) = {
-    import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
-    import io.circe._, io.circe.parser._
-    import io.circe.generic.auto._, io.circe.syntax._
-    Ace()
-      .mode(js.|.from(langToAceName(lang)))
-      .theme("github")
-      .onChange((s, e) => setCurrentAnswer(ProgramAnswer(s, lang).asJson.noSpaces))
-      .name(s"")
-      .value(value)
-      .build
-  }
+  )
 
 
   class TableItem(val key: Int, val time: Instant, val score: Option[ProblemScore], val message: String, val review: Option[String], val answerText: String)
