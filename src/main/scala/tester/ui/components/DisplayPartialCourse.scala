@@ -36,13 +36,13 @@ import viewData.{CourseInfoViewData, PartialCourseViewData, ProblemRefViewData, 
         }
       })
     }
-
-    def saveAnswer(ref: ProblemRefViewData, newAnswer: String): Unit = {
-      println(s"Saving answer $newAnswer")
-      setLoadedProblems(old =>
-        old + (ref.templateAlias -> old(ref.templateAlias).copy(answerInField = newAnswer))
-      )
-    }
+//
+//    def saveAnswer(ref: ProblemRefViewData, newAnswer: String): Unit = {
+//      println(s"Saving answer $newAnswer")
+//      setLoadedProblems(old =>
+//        old + (ref.templateAlias -> old(ref.templateAlias).copy(answerInField = newAnswer))
+//      )
+//    }
 
     Layout()(
       Layout.Sider(

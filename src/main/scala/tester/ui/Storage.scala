@@ -11,4 +11,9 @@ object Storage {
   def setUserAnswer(uniqueId: String, answer: String): Unit = {
     answers += uniqueId -> answer
   }
+
+  private var theme: String = "github"
+
+  def setTheme(t: String): Unit = theme = t
+  def getTheme() : String = theme
 }

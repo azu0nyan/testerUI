@@ -18,7 +18,7 @@ import typings.antd.components.{List => AntList, _}
 import typings.reactAce.components.{Ace, ReactAce}
 import typings.reactAce.libAceMod.IAceEditorProps
 import typings.aceBuilds.aceBuildsStrings.theme
-import typings.antd.antdStrings.{primary, topRight}
+import typings.antd.antdStrings.{horizontal, primary, topRight}
 import typings.betterReactMathjax.components.MathJaxContext.configMathJax3Configundef
 import typings.betterReactMathjax.components.{MathJax, MathJaxContext}
 import typings.betterReactMathjax.mathJaxContextMathJaxContextMod.MathJaxContextProps
@@ -66,7 +66,7 @@ import java.time.Instant
 
     def answerSubmitSuccess(avd: AnswerViewData): Unit = avd match {
       case AnswerViewData(answerId, problemId, answerText, answeredAt, status) =>
-
+        props.updateLoadedData()
     }
 
     div(
@@ -81,7 +81,7 @@ import java.time.Instant
 
 
   @react object ProgramAceEditor {
-    case class Props(uniqueId: String, initialValue: String, allowedLanguages: Seq[ProgrammingLanguage])
+    case class Props(uniqueId: String, initialValue: String, allowedLanguages: Seq[ProgrammingLanguage], submit: String => Unit)
 
     def langToAceName(p: ProgrammingLanguage): String = p match {
       case ProgrammingLanguage.Java => "java"
@@ -119,7 +119,6 @@ import java.time.Instant
       "terminal")
 
     val component = FunctionalComponent[Props] { props =>
-
       import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
       import io.circe._, io.circe.parser._
       import io.circe.generic.auto._, io.circe.syntax._
@@ -135,7 +134,6 @@ import java.time.Instant
         }
 
       val (language, setLanguage) = useState[ProgrammingLanguage](lang)
-
       val selectLangMenu = Select[String]
         .defaultValue(langToAceName(language))
         .onChange((newVal, _) => setLanguage(aceNameToLang(newVal)))(
@@ -144,7 +142,20 @@ import java.time.Instant
 
 
 
-      val (theme, setTheme) = useState[String]("github")
+      val (theme, setTheme) = useState[String](Storage.getTheme())
+
+      val selectThemeMenu = Select[String]
+        .defaultValue(theme)
+        .onChange((newVal, _) => {
+          Storage.setTheme(newVal)
+          setTheme(newVal)
+        })(
+          aceThemes.map(th => Select.Option(th)(th))
+        )
+
+
+
+
 
       val aceRef = React.createRef[libAceMod.default]
       useEffect(() => {
@@ -157,16 +168,19 @@ import java.time.Instant
 
 
 
-      div(selectLangMenu,
+      div(
+
+        Space.direction(horizontal)("Язык", selectLangMenu, "Тема", selectThemeMenu),
         Ace()
           .mode(js.|.from(langToAceName(language)))
           .theme(theme)
           .onChange((s, e) => Storage.setUserAnswer(props.uniqueId, ProgramAnswer(s, language).asJson.noSpaces))
           .name(props.uniqueId)
           .value(program)
+          .fontSize("16")
           .withRef(aceRef)
           .build,
-        Button()("Ответить").`type`(primary).onClick(_ => println("sub")) //todo
+        Button()("Ответить").`type`(primary).onClick(_ => props.submit(Storage.readUserAnswer(props.uniqueId).getOrElse(""))) //todo
       )
     }
   }
@@ -183,7 +197,7 @@ import java.time.Instant
     case AnswerField.ProgramInTextField(questionText, allowedLanguages, initialProgram) =>
       div(
         p(questionText), //todo innerhtml?
-        ProgramAceEditor(uid, if (currentAnswer.nonEmpty) currentAnswer else initialProgram.getOrElse(""), allowedLanguages)
+        ProgramAceEditor(uid, if (currentAnswer.nonEmpty) currentAnswer else initialProgram.getOrElse(""), allowedLanguages, submit)
       )
     case AnswerField.SelectOneField(questionText, variants) => div(Input().value(currentAnswer))
     case AnswerField.SelectManyField(questionText, variants) => div(Input().value(currentAnswer))
@@ -203,7 +217,7 @@ import java.time.Instant
         Table[TableItem]
           .bordered(true)
           //        .dataSourceVarargs(toTableItem(a.head, 1))
-          .dataSourceVarargs(a.zipWithIndex.map { case (ans, i) => toTableItem(ans, i) }: _ *)
+          .dataSourceVarargs(a.zipWithIndex.reverse.map { case (ans, i) => toTableItem(ans, i) }: _ *)
           .columnsVarargs(
             ColumnType[TableItem]()
               .setTitle("№")
