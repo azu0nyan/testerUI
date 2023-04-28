@@ -10,7 +10,7 @@ import slinky.core.WithAttrs.build
 
 import scala.scalajs.js
 import slinky.core._
-import slinky.web.html._
+import slinky.web.html.{code, _}
 import slinky.core.annotations.react
 import slinky.core.facade.Hooks.{useEffect, useState}
 import tester.ui.components.DisplayPartialCourse.LoadedProblemData
@@ -40,7 +40,7 @@ import java.time.Instant
 
 @react object DisplayProblem {
   case class Props(loggedInUser: LoggedInUser, loadedData: LoadedProblemData, updateLoadedData: () => Unit)
-
+  class SetInner(val __html: String) extends js.Object
 
   val component = FunctionalComponent[Props] { props =>
     //    val (currentAnswer, saveCurrentAnswer) = useState[String](props.loadedData.answerInField)
@@ -49,7 +49,7 @@ import java.time.Instant
     //
     //    }, Seq())
 
-    class SetInner(val __html: String) extends js.Object
+
 
     val pvd = props.loadedData.pvd
 
@@ -221,7 +221,7 @@ import java.time.Instant
         )
 
       val (fontSize, setFontSize) = useState[Int](Storage.getFontSize())
-      val fontSizes = Seq(8, 10, 12, 14,16, 20, 24, 32, 48, 72)
+      val fontSizes = Seq(8, 10, 12, 14, 16, 20, 24, 32, 48, 72)
       val selectFontSize = Select[Int]
         .defaultValue(fontSize)
         .style(CSSProperties().setWidth("75px"))
@@ -244,7 +244,7 @@ import java.time.Instant
         Space
           .direction(horizontal)
           .style(CSSProperties().setPadding(5))
-                ("Язык", selectLangMenu, "Тема", selectThemeMenu, "Размер", selectFontSize),
+          ("Язык", selectLangMenu, "Тема", selectThemeMenu, "Размер", selectFontSize),
         Ace()
           .style(CSSProperties().setWidth("100%"))
           .mode(js.|.from(langToAceName(language)))
@@ -285,10 +285,44 @@ import java.time.Instant
   )
 
 
-  class TableItem(val key: Int, val time: Instant, val score: Option[ProblemScore], val message: String, val review: Option[String], val answerText: String)
-  def toTableItem(awd: AnswerViewData, id: Int): TableItem = new TableItem(id, awd.answeredAt, awd.score, awd.status.toString, None, awd.answerText) //todo
+  class TableItem(val key: Int, val time: Instant, val score: Option[ProblemScore], val message: String, awaitConfirm: Boolean, val review: Option[String], val answerText: String)
+  def toTableItem(awd: AnswerViewData, id: Int): TableItem = new TableItem(id, awd.answeredAt, awd.score, awd.status.toString, awd.status.isInstanceOf[VerifiedAwaitingConfirmation], None, awd.answerText) //todo
 
-  def displayAnswers(a: Seq[AnswerViewData]) =
+
+  def displayAnswers(a: Seq[AnswerViewData]): WithAttrs[_ >: div.tag.type with section.tag.type <: TagElement] = {
+    def answerTableItem(tableItem: TableItem): WithAttrs[_ >: div.tag.type with section.tag.type <: TagElement] = {
+      val (modalOpen, setModalOpen) = useState[Boolean](false)
+      val (modalContent, setModalContent) = useState[String]("")
+      import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
+      import io.circe._, io.circe.parser._
+      import io.circe.generic.auto._, io.circe.syntax._
+      val answer = decode[ProgramAnswer](tableItem.answerText) match {
+        case Left(value) =>
+          tableItem.answerText
+        case Right(ProgramAnswer(prog, lang)) => prog
+      }
+      if (answer.length < 300 ) {
+        div(pre(code(dangerouslySetInnerHTML := new SetInner(answer))))
+      } else {
+        div(
+          pre(code(dangerouslySetInnerHTML := new SetInner(answer.take(300)))()),
+          Button().`type`(primary).onClick(_ => {
+            setModalContent(answer)
+            setModalOpen(true)
+          })("Показать"),
+          Modal()
+            .title(s"Текст ответа ${tableItem.key}")
+            .onOk(_ => setModalOpen(false))
+            .onCancel(_ => setModalOpen(false))
+            .closable(false)
+            .footer(Button().`type`(primary).onClick(_ => setModalOpen(false))("Закрыть"))
+            .visible(modalOpen)(
+              pre(code(dangerouslySetInnerHTML := new SetInner(modalContent))())
+            )
+        )
+      }
+    }
+
     if (a.isEmpty) div()
     else {
       import typings.antd.libTableInterfaceMod.{ColumnGroupType, ColumnType}
@@ -322,15 +356,13 @@ import java.time.Instant
               .setTitle("Текст ответа")
               .setDataIndex("answerText")
               .setKey("answerText")
-              .setRender((_, tableItem, _) => build(p(tableItem.answerText))),
+              .setRender((_, tableItem, _) => build(answerTableItem(tableItem))),
           )
       )
     }
+  }
 
-  def input(af: AnswerField, currentText: Option[String] = None) = div(
-    Input().value(currentText.getOrElse("").asInstanceOf[String]),
-    Button()("Ответить")
-  )
+
 }
 
 
