@@ -1,5 +1,6 @@
 package tester.ui.components
 
+import DbViewsShared.CourseShared.VerifiedAwaitingConfirmation
 import clientRequests.SubmitAnswerResponse
 import otsbridge.{AnswerField, ProgrammingLanguage}
 import otsbridge.AnswerField.{AnswerField, ProgramAnswer}
@@ -29,6 +30,9 @@ import slinky.core.facade.{React, ReactElement}
 import tester.ui.Storage
 import typings.antDesignIcons.components.AntdIcon
 import typings.antDesignIconsSvg.esAsnDownloadOutlinedMod
+import typings.antd.antdStrings
+import typings.csstype.mod.FloatProperty
+import typings.react.mod.CSSProperties
 import typings.reactAce.libAceMod
 
 import java.time.Instant
@@ -68,12 +72,32 @@ import java.time.Instant
       case AnswerViewData(answerId, problemId, answerText, answeredAt, status) =>
         props.updateLoadedData()
     }
+    //
+    div(//all
+      Space()
+        .direction(horizontal)
+        .align(antdStrings.start)
+        .wrap(true)(
+          Card().style(CSSProperties().setWidth("600px").setMargin(20).setPadding(5))(
+            div(
+              Card()
+                .style(CSSProperties()
+                  .setFloat(FloatProperty.right)
+                  .setWidth(150)
+                  .setPadding(5)
+                  .setMargin(20)
+                  .setDisplay(js.|.from("inline"))
 
-    div(
-      h1(pvd.title),
-      MathJax(div(dangerouslySetInnerHTML := new SetInner(pvd.problemHtml))),
+                )(ProblemScoreDisplay(pvd.score, pvd.answers.nonEmpty, pvd.answers.exists(_.status.isInstanceOf[VerifiedAwaitingConfirmation])) ),
+              h1(pvd.title),
+              MathJax(div(dangerouslySetInnerHTML := new SetInner(pvd.problemHtml))),
+            )
+          ),
+          Card().style(CSSProperties().setMargin(20).setPadding(5))(
+            displayAnswerField(pvd.problemId, pvd.answerFieldType, props.loadedData.answerInField, s => submitAnswer(s)),
+          )
+        ),
       //score
-      displayAnswerField(pvd.problemId, pvd.answerFieldType, props.loadedData.answerInField, s => submitAnswer(s)),
       displayAnswers(pvd.answers)
 
     )
@@ -90,12 +114,12 @@ import java.time.Instant
       case ProgrammingLanguage.Kojo => "scala"
       case ProgrammingLanguage.Cpp => "c_cpp"
     }
-    def aceNameToLang(p:String ): ProgrammingLanguage = p match {
-      case  "java" => ProgrammingLanguage.Java
-      case  "haskell" => ProgrammingLanguage.Haskell
-      case  "scala" => ProgrammingLanguage.Kojo
-      case  "scala3" => ProgrammingLanguage.Scala
-      case  "c_cpp" => ProgrammingLanguage.Cpp
+    def aceNameToLang(p: String): ProgrammingLanguage = p match {
+      case "java" => ProgrammingLanguage.Java
+      case "haskell" => ProgrammingLanguage.Haskell
+      case "scala" => ProgrammingLanguage.Kojo
+      case "scala3" => ProgrammingLanguage.Scala
+      case "c_cpp" => ProgrammingLanguage.Cpp
     }
 
     def langToDisplayName(p: ProgrammingLanguage): String = p match {
@@ -107,16 +131,34 @@ import java.time.Instant
     }
 
     val aceThemes = Seq(
-      "monokai",
+      "ambiance",
+      "chaos",
+      "chrome",
+      "cloud9_day",
+      "cloud9_night",
+      "clouds",
+      "cobalt",
+      "crimson_editor",
+      "dawn",
+      "dracula",
+      "dreamweaver",
+      "eclipse",
       "github",
-      "tomorrow",
+      "gob",
+      "gruvbox",
       "kuroir",
-      "twilight",
-      "xcode",
-      "textmate",
+      "mono_industrial",
+      "monokai",
+      "nord_dark",
+      "one_dark",
+      "pastel_on_dark",
       "solarized_dark",
       "solarized_light",
-      "terminal")
+      "sqlserver",
+      "terminal",
+      "textmate",
+      "tomorrow",
+      )
 
     val component = FunctionalComponent[Props] { props =>
       import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
@@ -136,25 +178,23 @@ import java.time.Instant
       val (language, setLanguage) = useState[ProgrammingLanguage](lang)
       val selectLangMenu = Select[String]
         .defaultValue(langToAceName(language))
+        .style(CSSProperties().setWidth("150px"))
         .onChange((newVal, _) => setLanguage(aceNameToLang(newVal)))(
           props.allowedLanguages.map(lang => Select.Option(langToAceName(lang))(langToDisplayName(lang)))
         )
-
 
 
       val (theme, setTheme) = useState[String](Storage.getTheme())
 
       val selectThemeMenu = Select[String]
         .defaultValue(theme)
+        .style(CSSProperties().setWidth("150px"))
         .onChange((newVal, _) => {
           Storage.setTheme(newVal)
           setTheme(newVal)
         })(
           aceThemes.map(th => Select.Option(th)(th))
         )
-
-
-
 
 
       val aceRef = React.createRef[libAceMod.default]
@@ -167,17 +207,21 @@ import java.time.Instant
       })
 
 
-
       div(
 
         Space.direction(horizontal)("Язык", selectLangMenu, "Тема", selectThemeMenu),
         Ace()
+          .style(CSSProperties().setWidth("100%"))
           .mode(js.|.from(langToAceName(language)))
+          .minLines(30)
+          .maxLines(200)
+          .enableBasicAutocompletion(true)
+          .enableLiveAutocompletion(true)
           .theme(theme)
           .onChange((s, e) => Storage.setUserAnswer(props.uniqueId, ProgramAnswer(s, language).asJson.noSpaces))
           .name(props.uniqueId)
           .value(program)
-          .fontSize("16")
+          .fontSize(32)
           .withRef(aceRef)
           .build,
         Button()("Ответить").`type`(primary).onClick(_ => props.submit(Storage.readUserAnswer(props.uniqueId).getOrElse(""))) //todo
@@ -195,8 +239,8 @@ import java.time.Instant
     case AnswerField.TextField(questionText, lines) =>
       div(Input().value(currentAnswer))
     case AnswerField.ProgramInTextField(questionText, allowedLanguages, initialProgram) =>
-      div(
-        p(questionText), //todo innerhtml?
+      div(style := CSSProperties().setWidth("600px"))(
+        if(questionText.nonEmpty) p(questionText) else "", //todo innerhtml?
         ProgramAceEditor(uid, if (currentAnswer.nonEmpty) currentAnswer else initialProgram.getOrElse(""), allowedLanguages, submit)
       )
     case AnswerField.SelectOneField(questionText, variants) => div(Input().value(currentAnswer))
