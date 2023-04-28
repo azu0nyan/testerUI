@@ -73,34 +73,58 @@ import java.time.Instant
         props.updateLoadedData()
     }
     //
-    div(//all
+    val problemDescription = div(
+      Card()
+        .style(CSSProperties()
+          .setFloat(FloatProperty.right)
+          .setWidth(150)
+          .setPadding(5)
+          .setMargin(20)
+          .setDisplay(js.|.from("inline"))
+
+        )(ProblemScoreDisplay(pvd.score, pvd.answers.nonEmpty, pvd.answers.exists(_.status.isInstanceOf[VerifiedAwaitingConfirmation]))),
+      h1(pvd.title),
+      MathJax(div(dangerouslySetInnerHTML := new SetInner(pvd.problemHtml))),
+    )
+    div(
+      Row().wrap(true)(
+        Col()
+          .flex("1 1 300px")(
+            Card().style(CSSProperties().setMinWidth("300px").setMaxWidth("900px").setMargin(20).setPadding(5))(
+              problemDescription
+            )
+          ),
+        Col()
+          .flex("1 1 500px")(
+            Card().style(CSSProperties().setMinWidth("500px").setMaxWidth("1600px").setMargin(20).setPadding(5))(
+              displayAnswerField(pvd.problemId, pvd.answerFieldType, props.loadedData.answerInField, s => submitAnswer(s)),
+            )
+          )
+      ),
+      Row(
+        Col()
+          .flex("auto")(
+            Card().style(CSSProperties().setMargin(20).setPadding(5))(
+              displayAnswers(pvd.answers)
+            )
+          )
+      )
+    )
+
+    /*div(//all
       Space()
         .direction(horizontal)
         .align(antdStrings.start)
         .wrap(true)(
           Card().style(CSSProperties().setWidth("600px").setMargin(20).setPadding(5))(
-            div(
-              Card()
-                .style(CSSProperties()
-                  .setFloat(FloatProperty.right)
-                  .setWidth(150)
-                  .setPadding(5)
-                  .setMargin(20)
-                  .setDisplay(js.|.from("inline"))
-
-                )(ProblemScoreDisplay(pvd.score, pvd.answers.nonEmpty, pvd.answers.exists(_.status.isInstanceOf[VerifiedAwaitingConfirmation])) ),
-              h1(pvd.title),
-              MathJax(div(dangerouslySetInnerHTML := new SetInner(pvd.problemHtml))),
-            )
+            problemDescription
           ),
           Card().style(CSSProperties().setMargin(20).setPadding(5))(
             displayAnswerField(pvd.problemId, pvd.answerFieldType, props.loadedData.answerInField, s => submitAnswer(s)),
           )
         ),
-      //score
       displayAnswers(pvd.answers)
-
-    )
+    )*/
   }
 
 
@@ -158,7 +182,7 @@ import java.time.Instant
       "terminal",
       "textmate",
       "tomorrow",
-      )
+    )
 
     val component = FunctionalComponent[Props] { props =>
       import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
@@ -196,24 +220,35 @@ import java.time.Instant
           aceThemes.map(th => Select.Option(th)(th))
         )
 
+      val (fontSize, setFontSize) = useState[Int](Storage.getFontSize())
+      val fontSizes = Seq(8, 10, 12, 14,16, 20, 24, 32, 48, 72)
+      val selectFontSize = Select[Int]
+        .defaultValue(fontSize)
+        .style(CSSProperties().setWidth("75px"))
+        .onChange((newVal, _) => {
+          Storage.setFontSize(newVal)
+          setFontSize(newVal)
+        })(
+          fontSizes.map(th => Select.Option(th)(th))
+        )
+
 
       val aceRef = React.createRef[libAceMod.default]
       useEffect(() => {
-        println(s"render $language")
         Storage.setUserAnswer(props.uniqueId, ProgramAnswer(program, language).asJson.noSpaces)
-        () => {
-          println("cle1an")
-        }
       })
 
 
       div(
 
-        Space.direction(horizontal)("Язык", selectLangMenu, "Тема", selectThemeMenu),
+        Space
+          .direction(horizontal)
+          .style(CSSProperties().setPadding(5))
+                ("Язык", selectLangMenu, "Тема", selectThemeMenu, "Размер", selectFontSize),
         Ace()
           .style(CSSProperties().setWidth("100%"))
           .mode(js.|.from(langToAceName(language)))
-          .minLines(30)
+          .minLines(20)
           .maxLines(200)
           .enableBasicAutocompletion(true)
           .enableLiveAutocompletion(true)
@@ -221,7 +256,7 @@ import java.time.Instant
           .onChange((s, e) => Storage.setUserAnswer(props.uniqueId, ProgramAnswer(s, language).asJson.noSpaces))
           .name(props.uniqueId)
           .value(program)
-          .fontSize(32)
+          .fontSize(fontSize)
           .withRef(aceRef)
           .build,
         Button()("Ответить").`type`(primary).onClick(_ => props.submit(Storage.readUserAnswer(props.uniqueId).getOrElse(""))) //todo
@@ -239,8 +274,8 @@ import java.time.Instant
     case AnswerField.TextField(questionText, lines) =>
       div(Input().value(currentAnswer))
     case AnswerField.ProgramInTextField(questionText, allowedLanguages, initialProgram) =>
-      div(style := CSSProperties().setWidth("600px"))(
-        if(questionText.nonEmpty) p(questionText) else "", //todo innerhtml?
+      div(style := CSSProperties())(
+        if (questionText.nonEmpty) p(questionText) else "", //todo innerhtml?
         ProgramAceEditor(uid, if (currentAnswer.nonEmpty) currentAnswer else initialProgram.getOrElse(""), allowedLanguages, submit)
       )
     case AnswerField.SelectOneField(questionText, variants) => div(Input().value(currentAnswer))
