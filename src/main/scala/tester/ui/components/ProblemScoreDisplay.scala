@@ -15,39 +15,49 @@ import typings.react.mod.CSSProperties
 
 @react object ProblemScoreDisplay {
 
-  def problemScoreElement(text:String, pct: Double, color: String) =
+  def problemScoreElement(text: String, pct: Double, color: String) =
     Progress()
       .`type`(antdStrings.line)
       .percent(pct * 100)
-//      .size(scalajs.js.Tuple2(4d, 100d).asInstanceOf[ProgressSize])
-      .format((_, _) => b(text))
+      //      .size(scalajs.js.Tuple2(4d, 100d).asInstanceOf[ProgressSize])
+      .format((_, _) => div(b(style := js.Dynamic.literal(color = color))(text)))
       .strokeColor(color)
 
 
+  case class Props(ps: ProblemScore, hasAnswers: Boolean, haveWaitingConfirmAnswer: Boolean)
 
-  case class Props(ps:ProblemScore, hasAnswers: Boolean, haveWaitingConfirmAnswer: Boolean)
+  def acceptNotAcceptText(passed: Boolean) =
+    if (passed) b(style := js.Dynamic.literal(color = "green"))("Зачтено")
+    else b(style := js.Dynamic.literal(color = "red"))("Не зачтено")
 
   val component = FunctionalComponent[Props] { props =>
-    val text = props.ps match {
-      case ProblemScore.BinaryScore(passed) => if(passed) "Зачтено" else "Не зачтено"
-      case _ => props.ps.toPrettyString
-    }
-
+    //    val text = props.ps match {
+    //      case ProblemScore.BinaryScore(passed) => if(passed) "Зачтено" else "Не зачтено"
+    //      case _ => props.ps.toPrettyString
+    //    }
+    //
     div(style := js.Dynamic.literal(
       display = "flex",
-      justifyContent = "center"
-    ))(if(props.ps.isMax){
-      problemScoreElement(text, props.ps.percentage, "green")
-    } else if(props.haveWaitingConfirmAnswer){
+      justifyContent = "center",
+//      width = "90%"
+    ))(if (props.ps.isMax) {
+      props.ps match {
+        case ProblemScore.BinaryScore(passed) => acceptNotAcceptText(passed)
+        case _ => problemScoreElement(props.ps.toPrettyString, props.ps.percentage, "green")
+      }
+    } else if (props.haveWaitingConfirmAnswer) {
       div(style := js.Dynamic.literal(
         color = "yellow"
       ))(b("Ожидает подтверждаения преподавателем"))
-    } else if(props.ps.toInt == 0 && !props.hasAnswers) {
+    } else if (props.ps.toInt == 0 && !props.hasAnswers) {
       div(style := js.Dynamic.literal(
         color = "red"
       ))(b("Нет ответа"))
     } else {
-      problemScoreElement(text, props.ps.percentage, if(props.ps.toInt == 0) "red" else "yellow")
+      props.ps match {
+        case ProblemScore.BinaryScore(passed) => acceptNotAcceptText(passed)
+        case _ => problemScoreElement(props.ps.toPrettyString, props.ps.percentage, if (props.ps.toInt == 0) "red" else "yellow")
+      }
     })
 
 

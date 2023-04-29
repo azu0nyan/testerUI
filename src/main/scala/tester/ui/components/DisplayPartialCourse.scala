@@ -32,7 +32,7 @@ import viewData.{CourseInfoViewData, PartialCourseViewData, ProblemRefViewData, 
       setLoadedProblems(old =>      {
         old.get(ref.templateAlias) match {
           case Some(loadedData) => old + (ref.templateAlias -> loadedData.copy(pvd = problemViewData))
-          case None => old + (ref.templateAlias -> LoadedProblemData(problemViewData, problemViewData.answers.headOption.map(_.answerText).getOrElse("")))
+          case None => old + (ref.templateAlias -> LoadedProblemData(problemViewData, problemViewData.answers.lastOption.map(_.answerText).getOrElse("")))
         }
       })
     }

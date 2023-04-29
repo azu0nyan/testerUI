@@ -1,8 +1,9 @@
 package tester.ui.components
 
-import DbViewsShared.CourseShared.VerifiedAwaitingConfirmation
+import DbViewsShared.CourseShared
+import DbViewsShared.CourseShared.{AnswerStatus, VerifiedAwaitingConfirmation}
 import clientRequests.SubmitAnswerResponse
-import otsbridge.{AnswerField, ProgrammingLanguage}
+import otsbridge.{AnswerField, ProblemScore, ProgramRunResult, ProgrammingLanguage}
 import otsbridge.AnswerField.{AnswerField, ProgramAnswer}
 import otsbridge.ProblemScore.ProblemScore
 import otsbridge.ProgrammingLanguage.ProgrammingLanguage
@@ -23,13 +24,15 @@ import typings.betterReactMathjax.mathJaxContextMathJaxContextMod.MathJaxContext
 import typings.betterReactMathjax.mathJaxContextMod
 import viewData.AnswerViewData
 import clientRequests._
-import slinky.core.facade.{React, ReactElement}
-import tester.ui.Storage
+import otsbridge.ProgramRunResult.ProgramRunResult
+import slinky.core.facade.{Fragment, React, ReactElement}
+import tester.ui.{DateFormat, Storage}
 import typings.antDesignIcons.components.AntdIcon
 import typings.antDesignIconsSvg.esAsnDownloadOutlinedMod
-import typings.antd.anon.`1`
-import typings.antd.antdStrings
+import typings.antd.anon.{ScrollToFirstRowOnChange, `1`}
+import typings.antd.{antdBooleans, antdStrings}
 import typings.csstype.mod.FloatProperty
+import typings.rcTable.anon.X
 import typings.react.mod.CSSProperties
 import typings.reactAce.libAceMod
 
@@ -54,13 +57,30 @@ import java.time.Instant
         case UserCourseWithProblemNotFound() => Notifications.showError(s"Курс не найден")
         case ProblemIsNotFromUserCourse() => Notifications.showError(s"Задача не из вашего курса")
         case AnswerSubmitted(avd: AnswerViewData) => answerSubmitSuccess(avd)
+      }, onFailure = t => {
+        Notifications.showError(s"Ошибка при отправке. Проверьте интернет подключение.")
       })
     }
 
     def answerSubmitSuccess(avd: AnswerViewData): Unit = avd match {
       case AnswerViewData(answerId, problemId, answerText, answeredAt, status) =>
+        status match {
+          case VerifiedAwaitingConfirmation(score, systemMessage, verifiedAt) =>
+            Notifications.renderNotificationReactElement(div(ProblemScoreDisplay(score, true, true)))
+          case CourseShared.Verified(score, review, systemMessage, verifiedAt, confirmedAt) =>
+            Notifications.renderNotificationReactElement(div(ProblemScoreDisplay(score, true, false)))
+          case CourseShared.Rejected(systemMessage, rejectedAt) =>
+            Notifications.showError(s"Отклонено. " + (if (systemMessage.nonEmpty) "Подробности в таблице ответов" else ""))
+          case CourseShared.BeingVerified() =>
+            Notifications.showInfo(s"Проверяется...")
+          case CourseShared.VerificationDelayed(systemMessage) =>
+            Notifications.showWarning(s"Проверка отложена. " + systemMessage.getOrElse(""))
+        }
+
         props.updateLoadedData()
     }
+
+
     val problemScoreCard = Card()
       .style(CSSProperties()
         .setFloat(FloatProperty.right)
@@ -73,7 +93,7 @@ import java.time.Instant
     //
     val problemDescription = div(
       problemScoreCard,
-      Title().level(typings.antd.antdInts.`3`) .style(CSSProperties().setMinWidth("250px"))(pvd.title),
+      Title().level(typings.antd.antdInts.`3`).style(CSSProperties().setMinWidth("250px"))(pvd.title),
       MathJax(div(dangerouslySetInnerHTML := new SetInner(pvd.problemHtml))),
     )
     div(style := js.Dynamic.literal(
@@ -125,8 +145,123 @@ import java.time.Instant
   )
 
 
-  class AnswersTableItem(val key: Int, val time: Instant, val score: Option[ProblemScore], val message: String, awaitConfirm: Boolean, val review: Option[String], val answerText: String)
-  def toAnswersTableItem(awd: AnswerViewData, id: Int): AnswersTableItem = new AnswersTableItem(id, awd.answeredAt, awd.score, awd.status.toString, awd.status.isInstanceOf[VerifiedAwaitingConfirmation], None, awd.answerText) //todo
+  class AnswersTableItem(val key: Int, val time: Instant, val score: Option[ProblemScore], val status: AnswerStatus, awaitConfirm: Boolean,
+                         val review: Option[String], val answerText: String) extends js.Object
+  def toAnswersTableItem(awd: AnswerViewData, id: Int): AnswersTableItem = {
+    val review = awd.status match {
+      case CourseShared.Verified(score, review, systemMessage, verifiedAt, confirmedAt) => review
+      case _ => None
+    }
+
+    new AnswersTableItem(id, awd.answeredAt, awd.score, awd.status, awd.status.isInstanceOf[VerifiedAwaitingConfirmation],
+      review, awd.answerText) //todo
+  }
+
+  def displayOrModal(msg: String, conv: String => ReactElement, openButtonText: String, header: String, charsMax: Int = 500, newLinesMax: Int = 20): ReactElement = {
+    val (modalOpen, setModalOpen) = useState[Boolean](false)
+    val (modalContent, setModalContent) = useState[String]("")
+
+    if (msg.length < charsMax && msg.count(_ == '\n') < newLinesMax) {
+      conv(msg)
+    } else {
+      div(
+        Button().`type`(primary).onClick(_ => {
+          setModalContent(msg)
+          setModalOpen(true)
+        })(openButtonText)
+        ,
+        Modal()
+          .width("1200px")
+          .title(s"$header")
+          .onOk(_ => setModalOpen(false))
+          .onCancel(_ => setModalOpen(false))
+          .closable(false)
+          .footer(Button().`type`(primary).onClick(_ => setModalOpen(false))("Закрыть"))
+          .visible(modalOpen)(
+            div(style := js.Dynamic.literal(width = "fit-content"))(
+              conv(msg)
+            )
+          )
+      )
+
+      //      Collapse(
+      //        Collapse.Panel(header = header)(conv(msg))
+      //      )
+    }
+  }
+
+
+  def displayRunResultsTable(results: Seq[ProgramRunResult]) = {
+    class RunResultsTableItem(val id: Int, val result: ReactElement, val message: ReactElement) extends js.Object
+
+    def toItem(id: Int, r: ProgramRunResult): RunResultsTableItem = r match {
+      case ProgramRunResult.ProgramRunResultSuccess(timeMS, message) =>
+        new RunResultsTableItem(id,
+          div(style := js.Dynamic.literal(color = "green"))(s"$timeMS мс."),
+          message match {
+            case Some(value) if value.nonEmpty =>
+              displayOrModal(value, v => pre(code(style := js.Dynamic.literal(color = "green"), dangerouslySetInnerHTML := new SetInner(v))()),
+                "Показать системное сообщение", "Системное сообщение", newLinesMax = 8)
+            case _ => div("")
+          }
+        )
+      case ProgramRunResult.ProgramRunResultWrongAnswer(message) =>
+        new RunResultsTableItem(id,
+          div(style := js.Dynamic.literal(color = "red"))(s"Неверный ответ."),
+          message match {
+            case Some(value) if value.nonEmpty =>
+              Fragment(div("Неверный ответ"),
+                displayOrModal(value, v => pre(code(style := js.Dynamic.literal(color = "red"), dangerouslySetInnerHTML := new SetInner(v))()),
+                  "Посмотреть", "Неверный ответ", newLinesMax = 8)
+              )
+            case _ => div("Неверный ответ")
+          }
+        )
+      case ProgramRunResult.ProgramRunResultFailure(message) =>
+        new RunResultsTableItem(id,
+          div(style := js.Dynamic.literal(color = "red"))(s"Ошибка."),
+          message match {
+            case Some(value) if value.nonEmpty =>
+              Fragment(div("Ошибка во время исполнения"),
+                displayOrModal(value, v => pre(code(style := js.Dynamic.literal(color = "red"), dangerouslySetInnerHTML := new SetInner(v))()),
+                  "Посмотреть", "Ошибка во время исполнения", newLinesMax = 8)
+              )
+            case _ => div("Ошибка во время исполнения")
+          }
+        )
+      case ProgramRunResult.ProgramRunResultTimeLimitExceeded(timeMs) =>
+        new RunResultsTableItem(id, div(style := js.Dynamic.literal(color = "red"))(s"$timeMs мс."), div("Превышено время исполнения"))
+      case ProgramRunResult.ProgramRunResultNotTested() =>
+        new RunResultsTableItem(id, div(style := js.Dynamic.literal(color = "yellow"))("Не протестированно"), div("Программа должна пройти все предыдущие тесты"))
+    }
+    import typings.antd.libTableInterfaceMod.{ColumnGroupType, ColumnType}
+
+    Table[RunResultsTableItem]
+      .bordered(true)
+      .dataSourceVarargs(results.zipWithIndex.map { case (r, i) => toItem(i, r) }: _ *)
+      .pagination(antdBooleans.`false`)
+      .size(antdStrings.small)
+      //      .scroll(new ScrollSettings("", ""))
+      .scroll(typings.rcTable.anon.X().setY(200).setX("").asInstanceOf[js.UndefOr[X] with ScrollToFirstRowOnChange])
+      .columnsVarargs(
+        ColumnType[RunResultsTableItem]()
+          .setTitle("№")
+          .setWidth("50px")
+          .setDataIndex("id")
+          .setRender((_, tableItem, _) => build(div(tableItem.id))),
+        ColumnType[RunResultsTableItem]()
+          .setTitle("Результат")
+          .setWidth("150px")
+          .setDataIndex("result")
+          .setRender((_, tableItem, _) => tableItem.result),
+        ColumnType[RunResultsTableItem]()
+          .setTitle("Сообщение")
+          .setWidth("fit-content")
+          .setDataIndex("message")
+          .setRender((_, tableItem, _) => tableItem.message),
+      )
+
+  }
 
 
   def displayAnswers(a: Seq[AnswerViewData]): WithAttrs[_ >: div.tag.type with section.tag.type <: TagElement] = {
@@ -141,29 +276,77 @@ import java.time.Instant
           tableItem.answerText
         case Right(ProgramAnswer(prog, lang)) => prog
       }
-      if (answer.length < 300) {
-        div(pre(code(dangerouslySetInnerHTML := new SetInner(answer))))
+      if (answer.length < 20) {
+        div(pre(style := js.Dynamic.literal(maxWidth = "200px", maxHeight = "200px", overflow = "scroll"))(code(dangerouslySetInnerHTML := new SetInner(answer))))
       } else {
         div(
-          pre(code(dangerouslySetInnerHTML := new SetInner(answer.take(300)))()),
+          pre(style := js.Dynamic.literal(maxWidth = "200px", maxHeight = "200px", overflow = "scroll"))(code(dangerouslySetInnerHTML := new SetInner(answer.take(300)))()),
           Button().`type`(primary).onClick(_ => {
             setModalContent(answer)
             setModalOpen(true)
-          })("Показать"),
+          })("Показать весь ответ"),
           Modal()
-            .title(s"Текст ответа ${tableItem.key}")
+            .width("1200px")
+            .title(s"Текст ответа ${tableItem.key} - ${DateFormat.dateFormatter.format(tableItem.time)}")
             .onOk(_ => setModalOpen(false))
             .onCancel(_ => setModalOpen(false))
             .closable(false)
             .footer(Button().`type`(primary).onClick(_ => setModalOpen(false))("Закрыть"))
             .visible(modalOpen)(
-              pre(code(dangerouslySetInnerHTML := new SetInner(modalContent))())
+              div(style := js.Dynamic.literal(width = "fit-content"))(
+                pre(code(dangerouslySetInnerHTML := new SetInner(modalContent))())
+              )
             )
         )
       }
     }
 
     def timeColumn(tableItem: AnswersTableItem) = {
+      div(
+        Statistic()
+          .title("Отправлено в")
+          .value(DateFormat.dateFormatter.format(tableItem.time))
+      )
+
+    }
+
+
+    def answerStatusColumn(status: AnswerStatus) = div(status match {
+      case VerifiedAwaitingConfirmation(score, systemMessage, verifiedAt) =>
+        p(style := js.Dynamic.literal(color = "yellow"))("Ожидает подтвержденя преподавателем")
+      case CourseShared.Verified(score, review, systemMessage, verifiedAt, confirmedAt) =>
+        score match {
+          case ProblemScore.MultipleRunsResultScore(runResults) =>
+            div(
+              div(style := js.Dynamic.literal(maxWidth = "300px", margin = "5px"))(ProblemScoreDisplay(score, true, false)),
+              displayRunResultsTable(runResults)
+            )
+          case score => div(style := js.Dynamic.literal(maxWidth = "300px", margin = "5px"))(ProblemScoreDisplay(score, true, false))
+        }
+      case CourseShared.Rejected(systemMessage, rejectedAt) =>
+        systemMessage match {
+          case Some(value) =>
+            div(
+              p(style := js.Dynamic.literal(color = "red"))("Отклонено"), {
+                val fullMessage = pre(code(style := js.Dynamic.literal(color = "red"), dangerouslySetInnerHTML := new SetInner(value))())
+                if (value.length < 500 && value.count(_ == '\n') < 20) {
+                  fullMessage
+                } else {
+                  Collapse(
+                    Collapse.Panel(header = "Показать системное сообщение.")(fullMessage)
+                  )
+                }
+              }
+            )
+          case None => (p(style := js.Dynamic.literal(color = "red"))("Отклонено"))
+        }
+      case CourseShared.BeingVerified() =>
+        p(style := js.Dynamic.literal(color = "yellow"))("Проверяется")
+      case CourseShared.VerificationDelayed(systemMessage) =>
+        p(style := js.Dynamic.literal(color = "yellow"))("Проверка отложена. " + systemMessage.getOrElse(""))
+    })
+
+    def systemMessageColumn(tableItem: AnswersTableItem) = {
 
       div()
     }
@@ -187,15 +370,15 @@ import java.time.Instant
               .setKey("time")
               .setRender((_, tableItem, _) => build(timeColumn(tableItem))),
             ColumnType[AnswersTableItem]()
-              .setTitle("Системное сообщение")
-              .setDataIndex("message")
-              .setKey("message")
-              .setRender((_, tableItem, _) => build(p(tableItem.message))),
+              .setTitle("Статус")
+              .setDataIndex("status")
+              .setKey("status")
+              .setRender((_, tableItem, _) => build(answerStatusColumn(tableItem.status))),
             ColumnType[AnswersTableItem]()
               .setTitle("Отзыв преподавателя")
               .setDataIndex("review")
               .setKey("review")
-              .setRender((_, tableItem, _) => build(p(tableItem.review))),
+              .setRender((_, tableItem, _) => build(p(tableItem.review.getOrElse("").asInstanceOf[String]))),
             ColumnType[AnswersTableItem]()
               .setTitle("Ответ")
               .setDataIndex("answerText")

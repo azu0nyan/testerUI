@@ -151,7 +151,11 @@ import typings.antd.antdStrings.{horizontal, primary, topRight}
         .fontSize(fontSize)
         .withRef(aceRef)
         .build,
-      Button()("Ответить").`type`(primary).onClick(_ => props.submit(Storage.readUserAnswer(props.uniqueId).getOrElse(""))) //todo
+      Space
+        .direction(horizontal)
+        .style(CSSProperties().setPadding(5))(
+          Button()("Ответить").`type`(primary).onClick(_ => props.submit(Storage.readUserAnswer(props.uniqueId).getOrElse("")))
+        )
     )
   }
 }
