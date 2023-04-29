@@ -34,37 +34,27 @@ import viewData.PartialCourseViewData
       if (container.childs.count(_.isInstanceOf[Container]) == 0) {
         MenuItem.withKey(container.alias)(title)
       } else {
-        SubMenu.withKey(container.alias).title(title)(
-          container.childs.flatMap {
-            case c: Container => Some(buildMenuFor(c))
-            case _ => None
-          }: _ *
-        )
+        SubMenu.withKey(container.alias)
+          .title(title)
+          .onTitleClick(_ => props.onPieceSelected(props.pcvd.courseData.findByAlias(container.alias).getOrElse(props.pcvd.courseData)))(
+            container.childs.flatMap {
+              case c: Container => Some(buildMenuFor(c))
+              case _ => None
+            }: _ *
+          )
       }
-
-
-      /*  .onClick(_ => props.onPieceSelected(container))(
-          container.childs.flatMap {
-            case c: Container => Some(buildMenuFor(c).build)
-            case _ => None
-          }: _ *
-        )*/
-
-
     }
 
     useEffect(() => {})
 
     Menu()
       .onClick(ev => {
-        println(ev.key.toString)
-        println(props.pcvd.courseData.findByAlias(ev.key.toString))
         props.onPieceSelected(props.pcvd.courseData.findByAlias(ev.key.toString).getOrElse(props.pcvd.courseData))
       })
       .theme(dark)
       .mode(typings.rcMenu.esInterfaceMod.MenuMode.inline) /*.defaultSelectedKeys(js.Array("1"))*/ (
-      buildMenuFor(props.pcvd.courseData)
-    )
+        props.pcvd.courseData.childs.collect { case c: Container => c }.map(buildMenuFor)
+      )
   }
 }
 

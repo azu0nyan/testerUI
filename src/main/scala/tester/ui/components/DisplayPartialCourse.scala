@@ -32,21 +32,21 @@ import viewData.{CourseInfoViewData, PartialCourseViewData, ProblemRefViewData, 
     useEffect(() => {})
 
 
-    def onProblemLoaded(ref: ProblemRefViewData, problemViewData: ProblemViewData) : Unit  = {
-      setLoadedProblems(old =>      {
+    def onProblemLoaded(ref: ProblemRefViewData, problemViewData: ProblemViewData): Unit = {
+      setLoadedProblems(old => {
         old.get(ref.templateAlias) match {
           case Some(loadedData) => old + (ref.templateAlias -> loadedData.copy(pvd = problemViewData))
           case None => old + (ref.templateAlias -> LoadedProblemData(problemViewData, problemViewData.answers.lastOption.map(_.answerText).getOrElse("")))
         }
       })
     }
-//
-//    def saveAnswer(ref: ProblemRefViewData, newAnswer: String): Unit = {
-//      println(s"Saving answer $newAnswer")
-//      setLoadedProblems(old =>
-//        old + (ref.templateAlias -> old(ref.templateAlias).copy(answerInField = newAnswer))
-//      )
-//    }
+    //
+    //    def saveAnswer(ref: ProblemRefViewData, newAnswer: String): Unit = {
+    //      println(s"Saving answer $newAnswer")
+    //      setLoadedProblems(old =>
+    //        old + (ref.templateAlias -> old(ref.templateAlias).copy(answerInField = newAnswer))
+    //      )
+    //    }
 
     Layout()(
       Layout.Sider()(
@@ -64,20 +64,24 @@ import viewData.{CourseInfoViewData, PartialCourseViewData, ProblemRefViewData, 
             case None =>
               ProblemLoader(props.loggedInUser, problemRef.problemId, p => onProblemLoaded(problemRef, p))
           }
-        case None => div(dangerouslySetInnerHTML := new SetInnerHtml(selectedCoursePiece.fullHtml(Map())))
+        case None =>
+          div(style := js.Dynamic.literal(
+            width = "-webkit-fill-available"
+          ))(
+            div(dangerouslySetInnerHTML := new SetInnerHtml(selectedCoursePiece.fullHtml(Map())))
+          )
       },
       Layout.Sider()(
-        Menu().theme(dark).mode(esInterfaceMod.MenuMode.inline) /*.defaultSelectedKeys(js.Array("1"))*/ (
-          props.partialCourse.problems.map(p => MenuItem("")(p.title).onClick(_ => setSelectedProblem(Some(p))))
-        )
+        CourseProblemSelector(props.partialCourse, spRef => setSelectedProblem(Some(spRef)))
+//        Menu().theme(dark).mode(esInterfaceMod.MenuMode.inline) /*.defaultSelectedKeys(js.Array("1"))*/ (
+//          props.partialCourse.problems.map(p => MenuItem("")(p.title).onClick(_ => setSelectedProblem(Some(p))))
+//        )
       ),
 
-//      Layout.Content(),
-//      Layout.Sider()
+      //      Layout.Content(),
+      //      Layout.Sider()
     )
   }
-
-
 
 
   @react object ProblemLoader {
@@ -87,7 +91,7 @@ import viewData.{CourseInfoViewData, PartialCourseViewData, ProblemRefViewData, 
       useEffect(() => {
         sendRequest(clientRequests.GetProblemData, clientRequests.GetProblemDataRequest(props.loggedInUser.token, props.problemId))(onComplete = {
           case clientRequests.GetProblemDataSuccess(pwd) => props.onLoad(pwd)
-          case clientRequests.UnknownGetProblemDataFailure() =>  Notifications.showError(s"Не могу загрузить задачу")
+          case clientRequests.UnknownGetProblemDataFailure() => Notifications.showError(s"Не могу загрузить задачу")
         })
       })
       Space().style(CSSProperties().setWidth("100%").setHeight("100%").setJustifyContent("center"))(

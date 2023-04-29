@@ -3,6 +3,7 @@ package tester.ui.components
 import scala.scalajs.js
 import slinky.core._
 import slinky.web.html._
+import typings.antd.components._
 import slinky.core.annotations.react
 import slinky.core.facade.Hooks.{useEffect, useState}
 
