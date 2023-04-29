@@ -26,6 +26,7 @@ import viewData.AnswerViewData
 import clientRequests._
 import otsbridge.ProgramRunResult.ProgramRunResult
 import slinky.core.facade.{Fragment, React, ReactElement}
+import tester.ui.components.Helpers.SetInnerHtml
 import tester.ui.{DateFormat, Storage}
 import typings.antDesignIcons.components.AntdIcon
 import typings.antDesignIconsSvg.esAsnDownloadOutlinedMod
@@ -41,8 +42,7 @@ import java.time.Instant
 
 @react object DisplayProblem {
   case class Props(loggedInUser: LoggedInUser, loadedData: LoadedProblemData, updateLoadedData: () => Unit)
-  class SetInner(val __html: String) extends js.Object
-
+  
   val component = FunctionalComponent[Props] { props =>
     val pvd = props.loadedData.pvd
 
@@ -94,7 +94,7 @@ import java.time.Instant
     val problemDescription = div(
       problemScoreCard,
       Title().level(typings.antd.antdInts.`3`).style(CSSProperties().setMinWidth("250px"))(pvd.title),
-      MathJax(div(dangerouslySetInnerHTML := new SetInner(pvd.problemHtml))),
+      MathJax(div(dangerouslySetInnerHTML := new SetInnerHtml(pvd.problemHtml))),
     )
     div(style := js.Dynamic.literal(
       width = "-webkit-fill-available"
@@ -200,7 +200,7 @@ import java.time.Instant
           div(style := js.Dynamic.literal(color = "green"))(s"$timeMS мс."),
           message match {
             case Some(value) if value.nonEmpty =>
-              displayOrModal(value, v => pre(code(style := js.Dynamic.literal(color = "green"), dangerouslySetInnerHTML := new SetInner(v))()),
+              displayOrModal(value, v => pre(code(style := js.Dynamic.literal(color = "green"), dangerouslySetInnerHTML := new SetInnerHtml(v))()),
                 "Показать системное сообщение", "Системное сообщение", newLinesMax = 8)
             case _ => div("")
           }
@@ -211,7 +211,7 @@ import java.time.Instant
           message match {
             case Some(value) if value.nonEmpty =>
               Fragment(div("Неверный ответ"),
-                displayOrModal(value, v => pre(code(style := js.Dynamic.literal(color = "red"), dangerouslySetInnerHTML := new SetInner(v))()),
+                displayOrModal(value, v => pre(code(style := js.Dynamic.literal(color = "red"), dangerouslySetInnerHTML := new SetInnerHtml(v))()),
                   "Посмотреть", "Неверный ответ", newLinesMax = 8)
               )
             case _ => div("Неверный ответ")
@@ -223,7 +223,7 @@ import java.time.Instant
           message match {
             case Some(value) if value.nonEmpty =>
               Fragment(div("Ошибка во время исполнения"),
-                displayOrModal(value, v => pre(code(style := js.Dynamic.literal(color = "red"), dangerouslySetInnerHTML := new SetInner(v))()),
+                displayOrModal(value, v => pre(code(style := js.Dynamic.literal(color = "red"), dangerouslySetInnerHTML := new SetInnerHtml(v))()),
                   "Посмотреть", "Ошибка во время исполнения", newLinesMax = 8)
               )
             case _ => div("Ошибка во время исполнения")
@@ -277,10 +277,10 @@ import java.time.Instant
         case Right(ProgramAnswer(prog, lang)) => prog
       }
       if (answer.length < 20) {
-        div(pre(style := js.Dynamic.literal(maxWidth = "200px", maxHeight = "200px", overflow = "scroll"))(code(dangerouslySetInnerHTML := new SetInner(answer))))
+        div(pre(style := js.Dynamic.literal(maxWidth = "200px", maxHeight = "200px", overflow = "scroll"))(code(dangerouslySetInnerHTML := new SetInnerHtml(answer))))
       } else {
         div(
-          pre(style := js.Dynamic.literal(maxWidth = "200px", maxHeight = "200px", overflow = "scroll"))(code(dangerouslySetInnerHTML := new SetInner(answer.take(300)))()),
+          pre(style := js.Dynamic.literal(maxWidth = "200px", maxHeight = "200px", overflow = "scroll"))(code(dangerouslySetInnerHTML := new SetInnerHtml(answer.take(300)))()),
           Button().`type`(primary).onClick(_ => {
             setModalContent(answer)
             setModalOpen(true)
@@ -294,7 +294,7 @@ import java.time.Instant
             .footer(Button().`type`(primary).onClick(_ => setModalOpen(false))("Закрыть"))
             .visible(modalOpen)(
               div(style := js.Dynamic.literal(width = "fit-content"))(
-                pre(code(dangerouslySetInnerHTML := new SetInner(modalContent))())
+                pre(code(dangerouslySetInnerHTML := new SetInnerHtml(modalContent))())
               )
             )
         )
@@ -328,7 +328,7 @@ import java.time.Instant
           case Some(value) =>
             div(
               p(style := js.Dynamic.literal(color = "red"))("Отклонено"), {
-                val fullMessage = pre(code(style := js.Dynamic.literal(color = "red"), dangerouslySetInnerHTML := new SetInner(value))())
+                val fullMessage = pre(code(style := js.Dynamic.literal(color = "red"), dangerouslySetInnerHTML := new SetInnerHtml(value))())
                 if (value.length < 500 && value.count(_ == '\n') < 20) {
                   fullMessage
                 } else {

@@ -1,5 +1,7 @@
 package tester.ui.components
 
+import otsbridge.CoursePiece.CoursePiece
+
 import scala.scalajs.js
 import slinky.core._
 import slinky.web.html._
@@ -7,6 +9,7 @@ import slinky.core.annotations.react
 import slinky.core.facade.Hooks.{useEffect, useState}
 import slinky.core.facade.React
 import slinky.core.facade.ReactContext.RichReactContext
+import tester.ui.components.Helpers.SetInnerHtml
 import tester.ui.requests.Helpers.sendRequest
 import typings.antd.antdStrings.{dark, large}
 import typings.antd.components.{List => AntList, _}
@@ -25,6 +28,7 @@ import viewData.{CourseInfoViewData, PartialCourseViewData, ProblemRefViewData, 
     val (loadedProblems, setLoadedProblems) = useState[Map[String, LoadedProblemData]](Map[String, LoadedProblemData]())
 
     val (selectedProblem, setSelectedProblem) = useState[Option[ProblemRefViewData]](None)
+    val (selectedCoursePiece, setSelectedCoursePiece) = useState[CoursePiece](props.partialCourse.courseData)
     useEffect(() => {})
 
 
@@ -45,10 +49,8 @@ import viewData.{CourseInfoViewData, PartialCourseViewData, ProblemRefViewData, 
 //    }
 
     Layout()(
-      Layout.Sider(
-        Menu().theme(dark).mode(esInterfaceMod.MenuMode.inline) /*.defaultSelectedKeys(js.Array("1"))*/ (
-          props.partialCourse.problems.map(p => MenuItem("")(p.title).onClick(_ => setSelectedProblem(Some(p))))
-        )
+      Layout.Sider()(
+        CourseContents(props.partialCourse, cp => setSelectedCoursePiece(cp))
       ),
       selectedProblem match {
         case Some(problemRef) =>
@@ -62,8 +64,13 @@ import viewData.{CourseInfoViewData, PartialCourseViewData, ProblemRefViewData, 
             case None =>
               ProblemLoader(props.loggedInUser, problemRef.problemId, p => onProblemLoaded(problemRef, p))
           }
-        case None => div(props.partialCourse.courseData.fullHtml(Map()))
-      }
+        case None => div(dangerouslySetInnerHTML := new SetInnerHtml(selectedCoursePiece.fullHtml(Map())))
+      },
+      Layout.Sider()(
+        Menu().theme(dark).mode(esInterfaceMod.MenuMode.inline) /*.defaultSelectedKeys(js.Array("1"))*/ (
+          props.partialCourse.problems.map(p => MenuItem("")(p.title).onClick(_ => setSelectedProblem(Some(p))))
+        )
+      ),
 
 //      Layout.Content(),
 //      Layout.Sider()
