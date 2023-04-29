@@ -11,6 +11,7 @@ import tester.ui.requests.Helpers.sendRequest
 import typings.antd.antdStrings.{dark, large}
 import typings.antd.components.{List => AntList, _}
 import typings.rcMenu.esInterfaceMod
+import typings.react.mod.CSSProperties
 import viewData.{CourseInfoViewData, PartialCourseViewData, ProblemRefViewData, ProblemViewData}
 
 
@@ -28,7 +29,6 @@ import viewData.{CourseInfoViewData, PartialCourseViewData, ProblemRefViewData, 
 
 
     def onProblemLoaded(ref: ProblemRefViewData, problemViewData: ProblemViewData) : Unit  = {
-      println(s"Problem loaded")
       setLoadedProblems(old =>      {
         old.get(ref.templateAlias) match {
           case Some(loadedData) => old + (ref.templateAlias -> loadedData.copy(pvd = problemViewData))
@@ -83,8 +83,9 @@ import viewData.{CourseInfoViewData, PartialCourseViewData, ProblemRefViewData, 
           case clientRequests.UnknownGetProblemDataFailure() =>  Notifications.showError(s"Не могу загрузить задачу")
         })
       })
-
-      Spin().tip(s"Загрузка задачи...").size(large)
+      Space().style(CSSProperties().setWidth("100%").setHeight("100%").setJustifyContent("center"))(
+        Spin().tip(s"Загрузка задачи...").size(large)
+      )
     }
   }
 }

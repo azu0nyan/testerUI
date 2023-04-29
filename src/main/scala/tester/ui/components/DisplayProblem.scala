@@ -16,9 +16,6 @@ import slinky.core.facade.Hooks.{useEffect, useState}
 import tester.ui.components.DisplayPartialCourse.LoadedProblemData
 import tester.ui.requests.Helpers.sendRequest
 import typings.antd.components.{List => AntList, _}
-import typings.reactAce.components.{Ace, ReactAce}
-import typings.reactAce.libAceMod.IAceEditorProps
-import typings.aceBuilds.aceBuildsStrings.theme
 import typings.antd.antdStrings.{horizontal, primary, topRight}
 import typings.betterReactMathjax.components.MathJaxContext.configMathJax3Configundef
 import typings.betterReactMathjax.components.{MathJax, MathJaxContext}
@@ -30,6 +27,7 @@ import slinky.core.facade.{React, ReactElement}
 import tester.ui.Storage
 import typings.antDesignIcons.components.AntdIcon
 import typings.antDesignIconsSvg.esAsnDownloadOutlinedMod
+import typings.antd.anon.`1`
 import typings.antd.antdStrings
 import typings.csstype.mod.FloatProperty
 import typings.react.mod.CSSProperties
@@ -43,16 +41,7 @@ import java.time.Instant
   class SetInner(val __html: String) extends js.Object
 
   val component = FunctionalComponent[Props] { props =>
-    //    val (currentAnswer, saveCurrentAnswer) = useState[String](props.loadedData.answerInField)
-    //
-    //    useEffect(() => {
-    //
-    //    }, Seq())
-
-
-
     val pvd = props.loadedData.pvd
-
 
     def submitAnswer(answer: String): Unit = {
       sendRequest(clientRequests.SubmitAnswer, clientRequests.SubmitAnswerRequest(props.loggedInUser.token, pvd.problemId, answer))(onComplete = {
@@ -72,25 +61,28 @@ import java.time.Instant
       case AnswerViewData(answerId, problemId, answerText, answeredAt, status) =>
         props.updateLoadedData()
     }
+    val problemScoreCard = Card()
+      .style(CSSProperties()
+        .setFloat(FloatProperty.right)
+        .setWidth(150)
+        .setPadding(5)
+        .setMargin(20)
+        .setDisplay(js.|.from("inline"))
+      )(ProblemScoreDisplay(pvd.score, pvd.answers.nonEmpty, pvd.answers.exists(_.status.isInstanceOf[VerifiedAwaitingConfirmation])))
+
     //
     val problemDescription = div(
-      Card()
-        .style(CSSProperties()
-          .setFloat(FloatProperty.right)
-          .setWidth(150)
-          .setPadding(5)
-          .setMargin(20)
-          .setDisplay(js.|.from("inline"))
-
-        )(ProblemScoreDisplay(pvd.score, pvd.answers.nonEmpty, pvd.answers.exists(_.status.isInstanceOf[VerifiedAwaitingConfirmation]))),
-      h1(pvd.title),
+      problemScoreCard,
+      Title().level(typings.antd.antdInts.`3`) .style(CSSProperties().setMinWidth("250px"))(pvd.title),
       MathJax(div(dangerouslySetInnerHTML := new SetInner(pvd.problemHtml))),
     )
-    div(
+    div(style := js.Dynamic.literal(
+      width = "-webkit-fill-available"
+    ))(
       Row().wrap(true)(
         Col()
           .flex("1 1 300px")(
-            Card().style(CSSProperties().setMinWidth("300px").setMaxWidth("900px").setMargin(20).setPadding(5))(
+            Card().style(CSSProperties().setMinWidth("400px").setMaxWidth("900px").setMargin(20).setPadding(5))(
               problemDescription
             )
           ),
@@ -110,158 +102,6 @@ import java.time.Instant
           )
       )
     )
-
-    /*div(//all
-      Space()
-        .direction(horizontal)
-        .align(antdStrings.start)
-        .wrap(true)(
-          Card().style(CSSProperties().setWidth("600px").setMargin(20).setPadding(5))(
-            problemDescription
-          ),
-          Card().style(CSSProperties().setMargin(20).setPadding(5))(
-            displayAnswerField(pvd.problemId, pvd.answerFieldType, props.loadedData.answerInField, s => submitAnswer(s)),
-          )
-        ),
-      displayAnswers(pvd.answers)
-    )*/
-  }
-
-
-  @react object ProgramAceEditor {
-    case class Props(uniqueId: String, initialValue: String, allowedLanguages: Seq[ProgrammingLanguage], submit: String => Unit)
-
-    def langToAceName(p: ProgrammingLanguage): String = p match {
-      case ProgrammingLanguage.Java => "java"
-      case ProgrammingLanguage.Haskell => "haskell"
-      case ProgrammingLanguage.Scala => "scala3"
-      case ProgrammingLanguage.Kojo => "scala"
-      case ProgrammingLanguage.Cpp => "c_cpp"
-    }
-    def aceNameToLang(p: String): ProgrammingLanguage = p match {
-      case "java" => ProgrammingLanguage.Java
-      case "haskell" => ProgrammingLanguage.Haskell
-      case "scala" => ProgrammingLanguage.Kojo
-      case "scala3" => ProgrammingLanguage.Scala
-      case "c_cpp" => ProgrammingLanguage.Cpp
-    }
-
-    def langToDisplayName(p: ProgrammingLanguage): String = p match {
-      case ProgrammingLanguage.Java => "java"
-      case ProgrammingLanguage.Haskell => "haskell"
-      case ProgrammingLanguage.Scala => "scala3"
-      case ProgrammingLanguage.Kojo => "Kojo(scala)"
-      case ProgrammingLanguage.Cpp => "c++"
-    }
-
-    val aceThemes = Seq(
-      "ambiance",
-      "chaos",
-      "chrome",
-      "cloud9_day",
-      "cloud9_night",
-      "clouds",
-      "cobalt",
-      "crimson_editor",
-      "dawn",
-      "dracula",
-      "dreamweaver",
-      "eclipse",
-      "github",
-      "gob",
-      "gruvbox",
-      "kuroir",
-      "mono_industrial",
-      "monokai",
-      "nord_dark",
-      "one_dark",
-      "pastel_on_dark",
-      "solarized_dark",
-      "solarized_light",
-      "sqlserver",
-      "terminal",
-      "textmate",
-      "tomorrow",
-    )
-
-    val component = FunctionalComponent[Props] { props =>
-      import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
-      import io.circe._, io.circe.parser._
-      import io.circe.generic.auto._, io.circe.syntax._
-
-      val toParse = Storage.readUserAnswer(props.uniqueId) match {
-        case Some(answ) => answ
-        case None => props.initialValue
-      }
-      val (program, lang) =
-        decode[ProgramAnswer](toParse) match {
-          case Left(error) => (toParse, props.allowedLanguages.headOption.getOrElse(ProgrammingLanguage.Java))
-          case Right(ProgramAnswer(program, programmingLanguage)) => (program, programmingLanguage)
-        }
-
-      val (language, setLanguage) = useState[ProgrammingLanguage](lang)
-      val selectLangMenu = Select[String]
-        .defaultValue(langToAceName(language))
-        .style(CSSProperties().setWidth("150px"))
-        .onChange((newVal, _) => setLanguage(aceNameToLang(newVal)))(
-          props.allowedLanguages.map(lang => Select.Option(langToAceName(lang))(langToDisplayName(lang)))
-        )
-
-
-      val (theme, setTheme) = useState[String](Storage.getTheme())
-
-      val selectThemeMenu = Select[String]
-        .defaultValue(theme)
-        .style(CSSProperties().setWidth("150px"))
-        .onChange((newVal, _) => {
-          Storage.setTheme(newVal)
-          setTheme(newVal)
-        })(
-          aceThemes.map(th => Select.Option(th)(th))
-        )
-
-      val (fontSize, setFontSize) = useState[Int](Storage.getFontSize())
-      val fontSizes = Seq(8, 10, 12, 14, 16, 20, 24, 32, 48, 72)
-      val selectFontSize = Select[Int]
-        .defaultValue(fontSize)
-        .style(CSSProperties().setWidth("75px"))
-        .onChange((newVal, _) => {
-          Storage.setFontSize(newVal)
-          setFontSize(newVal)
-        })(
-          fontSizes.map(th => Select.Option(th)(th))
-        )
-
-
-      val aceRef = React.createRef[libAceMod.default]
-      useEffect(() => {
-        Storage.setUserAnswer(props.uniqueId, ProgramAnswer(program, language).asJson.noSpaces)
-      })
-
-
-      div(
-
-        Space
-          .direction(horizontal)
-          .style(CSSProperties().setPadding(5))
-          ("Язык", selectLangMenu, "Тема", selectThemeMenu, "Размер", selectFontSize),
-        Ace()
-          .style(CSSProperties().setWidth("100%"))
-          .mode(js.|.from(langToAceName(language)))
-          .minLines(20)
-          .maxLines(200)
-          .enableBasicAutocompletion(true)
-          .enableLiveAutocompletion(true)
-          .theme(theme)
-          .onChange((s, e) => Storage.setUserAnswer(props.uniqueId, ProgramAnswer(s, language).asJson.noSpaces))
-          .name(props.uniqueId)
-          .value(program)
-          .fontSize(fontSize)
-          .withRef(aceRef)
-          .build,
-        Button()("Ответить").`type`(primary).onClick(_ => props.submit(Storage.readUserAnswer(props.uniqueId).getOrElse(""))) //todo
-      )
-    }
   }
 
 
@@ -285,12 +125,12 @@ import java.time.Instant
   )
 
 
-  class TableItem(val key: Int, val time: Instant, val score: Option[ProblemScore], val message: String, awaitConfirm: Boolean, val review: Option[String], val answerText: String)
-  def toTableItem(awd: AnswerViewData, id: Int): TableItem = new TableItem(id, awd.answeredAt, awd.score, awd.status.toString, awd.status.isInstanceOf[VerifiedAwaitingConfirmation], None, awd.answerText) //todo
+  class AnswersTableItem(val key: Int, val time: Instant, val score: Option[ProblemScore], val message: String, awaitConfirm: Boolean, val review: Option[String], val answerText: String)
+  def toAnswersTableItem(awd: AnswerViewData, id: Int): AnswersTableItem = new AnswersTableItem(id, awd.answeredAt, awd.score, awd.status.toString, awd.status.isInstanceOf[VerifiedAwaitingConfirmation], None, awd.answerText) //todo
 
 
   def displayAnswers(a: Seq[AnswerViewData]): WithAttrs[_ >: div.tag.type with section.tag.type <: TagElement] = {
-    def answerTableItem(tableItem: TableItem): WithAttrs[_ >: div.tag.type with section.tag.type <: TagElement] = {
+    def answerColumn(tableItem: AnswersTableItem): WithAttrs[_ >: div.tag.type with section.tag.type <: TagElement] = {
       val (modalOpen, setModalOpen) = useState[Boolean](false)
       val (modalContent, setModalContent) = useState[String]("")
       import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
@@ -301,7 +141,7 @@ import java.time.Instant
           tableItem.answerText
         case Right(ProgramAnswer(prog, lang)) => prog
       }
-      if (answer.length < 300 ) {
+      if (answer.length < 300) {
         div(pre(code(dangerouslySetInnerHTML := new SetInner(answer))))
       } else {
         div(
@@ -323,40 +163,44 @@ import java.time.Instant
       }
     }
 
+    def timeColumn(tableItem: AnswersTableItem) = {
+
+      div()
+    }
     if (a.isEmpty) div()
     else {
       import typings.antd.libTableInterfaceMod.{ColumnGroupType, ColumnType}
       section(
-        Table[TableItem]
+        Table[AnswersTableItem]
           .bordered(true)
           //        .dataSourceVarargs(toTableItem(a.head, 1))
-          .dataSourceVarargs(a.zipWithIndex.reverse.map { case (ans, i) => toTableItem(ans, i) }: _ *)
+          .dataSourceVarargs(a.zipWithIndex.reverse.map { case (ans, i) => toAnswersTableItem(ans, i) }: _ *)
           .columnsVarargs(
-            ColumnType[TableItem]()
+            ColumnType[AnswersTableItem]()
               .setTitle("№")
               .setDataIndex("id ")
               .setKey("id")
               .setRender((_, tableItem, _) => build(p(tableItem.key))),
-            ColumnType[TableItem]()
+            ColumnType[AnswersTableItem]()
               .setTitle("Время")
               .setDataIndex("time")
               .setKey("time")
-              .setRender((_, tableItem, _) => build(p(tableItem.time.toString))),
-            ColumnType[TableItem]()
+              .setRender((_, tableItem, _) => build(timeColumn(tableItem))),
+            ColumnType[AnswersTableItem]()
               .setTitle("Системное сообщение")
               .setDataIndex("message")
               .setKey("message")
               .setRender((_, tableItem, _) => build(p(tableItem.message))),
-            ColumnType[TableItem]()
+            ColumnType[AnswersTableItem]()
               .setTitle("Отзыв преподавателя")
               .setDataIndex("review")
               .setKey("review")
               .setRender((_, tableItem, _) => build(p(tableItem.review))),
-            ColumnType[TableItem]()
-              .setTitle("Текст ответа")
+            ColumnType[AnswersTableItem]()
+              .setTitle("Ответ")
               .setDataIndex("answerText")
               .setKey("answerText")
-              .setRender((_, tableItem, _) => build(answerTableItem(tableItem))),
+              .setRender((_, tableItem, _) => build(answerColumn(tableItem))),
           )
       )
     }
