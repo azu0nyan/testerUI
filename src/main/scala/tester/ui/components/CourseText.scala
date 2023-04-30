@@ -67,6 +67,7 @@ import viewData.{PartialCourseViewData, ProblemRefViewData}
       ) : _ *)
     }
 
+    //todo add next|prev buttons
     def matchPiece(c: CoursePiece): ReactElement = {
       import typings.betterReactMathjax.components.{MathJax, MathJaxContext}
       c match {

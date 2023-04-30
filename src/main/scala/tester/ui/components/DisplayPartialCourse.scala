@@ -30,7 +30,8 @@ import viewData.{CourseInfoViewData, PartialCourseViewData, ProblemRefViewData, 
 
   val component = FunctionalComponent[Props] { props =>
 
-
+    val (leftCollapsed, setLeftCollapsed) = useState[Boolean](false)
+    val (rightCollapsed, setRightCollapsed) = useState[Boolean](false)
 
     val (appMode, setAppMode) = useState[DisplayAppMode](DisplayCourseAndProblem)
     val (loadedProblems, setLoadedProblems) = useState[Map[String, LoadedProblemData]](Map[String, LoadedProblemData]())
@@ -114,42 +115,29 @@ import viewData.{CourseInfoViewData, PartialCourseViewData, ProblemRefViewData, 
     })
 
 
-    Layout()(
-      Layout.Sider()(
+    Layout().style(CSSProperties().setMinHeight("100vh"))(
+      Layout.Sider()
+        .collapsible(true)
+        .collapsed(leftCollapsed)
+        .collapsedWidth(0)
+        .zeroWidthTriggerStyle(CSSProperties().setTop("0px"))
+//        .trigger(div("Показать"))
+        .onCollapse((b, _) => setLeftCollapsed(b))(
         CourseContents(props.partialCourse, cp => setSelectedCoursePiece(cp))
       ),
       displayContent(),
-        /*
-      selectedProblem match {
-        case Some(problemRef) =>
-          loadedProblems.get(problemRef.templateAlias) match {
-            case Some(loadedData) => DisplayProblem(props.loggedInUser, loadedData, () => {
-              sendRequest(clientRequests.GetProblemData, clientRequests.GetProblemDataRequest(props.loggedInUser.token, problemRef.problemId))(onComplete = {
-                case clientRequests.GetProblemDataSuccess(pwd) => onProblemLoaded(problemRef, pwd)
-                case clientRequests.UnknownGetProblemDataFailure() => Notifications.showError(s"Не могу загрузить задачу")
-              })
-            }).withKey(problemRef.problemId)
-            case None =>
-              ProblemLoader(props.loggedInUser, problemRef.problemId, p => onProblemLoaded(problemRef, p))
-          }
-        case None =>
-          CourseText(props.partialCourse, selectedCoursePiece, p => setSelectedProblem(Some(p)), cp => setSelectedCoursePiece(cp))
-*/
-          /*div(style := js.Dynamic.literal(
-            width = "-webkit-fill-available"
-          ))(
-            div(dangerouslySetInnerHTML := new SetInnerHtml(selectedCoursePiece.fullHtml(Map())))
-          )
-      },*/
-      Layout.Sider()(
+
+      Layout.Sider()
+        .collapsible(true)
+        .collapsed(rightCollapsed)
+        .collapsedWidth(0)
+        .zeroWidthTriggerStyle(CSSProperties().setRight("0px").setTop("0px"))
+//        .trigger(div("Показать"))
+        .onCollapse((b, _) => setRightCollapsed(b))(
         CourseProblemSelector(props.partialCourse, spRef => setSelectedProblem(Some(spRef)))
-//        Menu().theme(dark).mode(esInterfaceMod.MenuMode.inline) /*.defaultSelectedKeys(js.Array("1"))*/ (
-//          props.partialCourse.problems.map(p => MenuItem("")(p.title).onClick(_ => setSelectedProblem(Some(p))))
-//        )
       ),
 
-      //      Layout.Content(),
-      //      Layout.Sider()
+
     )
   }
 
