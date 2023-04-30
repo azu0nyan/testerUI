@@ -25,22 +25,24 @@ import viewData.PartialCourseViewData
 
     def buildMenuFor(container: Container): ReactElement = {
 
-      val title = container match {
-        case CoursePiece.CourseRoot(title, annotation, childs) => title
-        case CoursePiece.Theme(alias, title, textHtml, childs, displayMe) => title
-        case CoursePiece.SubTheme(alias, title, textHtml, childs, displayMe) => title
+      val (title, content) = container match {
+        case CoursePiece.CourseRoot(title, annotation, childs) => (title, annotation)
+        case CoursePiece.Theme(alias, title, textHtml, childs, displayMe) => (title, textHtml)
+        case CoursePiece.SubTheme(alias, title, textHtml, childs, displayMe) => (title, textHtml)
       }
-
+      //todo make menu item for all with displayMe OwnPage
       if (container.childs.count(_.isInstanceOf[Container]) == 0) {
         MenuItem.withKey(container.alias)(title)
       } else {
+        val childs:Seq[ReactElement] =
+          (if (content.nonEmpty) Seq[ReactElement](MenuItem.withKey(container.alias)(title)) else Seq[ReactElement]()) ++ (container.childs.flatMap {
+          case c: Container => Some(buildMenuFor(c))
+          case _ => None
+        })
         SubMenu.withKey(container.alias)
-          .title(title)
-          .onTitleClick(_ => props.onPieceSelected(props.pcvd.courseData.findByAlias(container.alias).getOrElse(props.pcvd.courseData)))(
-            container.childs.flatMap {
-              case c: Container => Some(buildMenuFor(c))
-              case _ => None
-            }: _ *
+          /*.onTitleClick(_ => props.onPieceSelected(props.pcvd.courseData.findByAlias(container.alias).getOrElse(props.pcvd.courseData)))*/
+          .title(title)(
+            childs: _ *
           )
       }
     }
