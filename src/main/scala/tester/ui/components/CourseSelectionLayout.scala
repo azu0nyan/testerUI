@@ -1,5 +1,6 @@
 package tester.ui.components
 
+import DbViewsShared.CourseShared
 import clientRequests.GetCoursesList
 import clientRequests.admin.{CourseList, CourseListSuccess}
 
@@ -8,6 +9,7 @@ import slinky.core._
 import slinky.web.html._
 import slinky.core.annotations.react
 import slinky.core.facade.Hooks.{useEffect, useState}
+import tester.ui.DateFormat
 import tester.ui.requests.Helpers.sendRequest
 import typings.antd.antdStrings.{dark, large, primary}
 import typings.antd.{antdStrings, libSpaceMod}
@@ -50,15 +52,21 @@ import viewData.CourseInfoViewData
 
     def content(courses: Seq[CourseInfoViewData], selectedCourse: Option[CourseInfoViewData]) = {
       Layout.Content()
-        .style(CSSProperties().setMinHeight("120"))(
+        .style(CSSProperties())(
           selectedCourse match {
-            case Some(course) => div(
+            case Some(course) => Card().style(CSSProperties().setMargin(20))(
               h1(course.title),
               p(course.description),
-              p(course.status.toString),
+              p(course.status match {
+                case CourseShared.Passing(endsAt) => endsAt match {
+                  case Some(value) => div("Активен до " + DateFormat.dateFormatter.format(value))
+                  case None => div("Активен")
+                }
+                case CourseShared.Finished() => div("Завершен")
+              }),
               Button()
                 .`type`(primary)
-                .onClick(e => props.onSelected(course))("Продолжить")
+                .onClick(e => props.onSelected(course))("Продолжить ")
             )
             case None => div("Выберите курс")
           }
@@ -77,9 +85,9 @@ import viewData.CourseInfoViewData
         case clientRequests.GetCoursesListFailure(fal) => //todo
       })
     }, Seq())
-    
-    
-    
+
+
+
     Layout()(
       leftSider(coursesList, x => setSelectedCourse(Some(x))),
       content(coursesList, selectedCourse),
