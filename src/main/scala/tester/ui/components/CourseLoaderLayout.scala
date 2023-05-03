@@ -16,7 +16,7 @@ import viewData.{CourseInfoViewData, PartialCourseViewData}
 
 
 @react object CourseLoaderLayout {
-  case class Props(loggedInUser: LoggedInUser, courseInfo: CourseInfoViewData)
+  case class Props(loggedInUser: LoggedInUser, courseInfo: CourseInfoViewData, logout: () => Unit)
 
   val component = FunctionalComponent[Props] { props =>
     val (courseData, setCourseData) = useState[Option[PartialCourseViewData]](None)
@@ -36,9 +36,9 @@ import viewData.{CourseInfoViewData, PartialCourseViewData}
 
     courseData match {
       case Some(p) =>
-        DisplayPartialCourse(props.loggedInUser, p)
+        DisplayPartialCourse(props.loggedInUser, p, props.logout)
       case None =>
-        Spin().tip(s"Загрузка курса...").size(large)
+        Helpers.basicLayout(Spin().tip(s"Загрузка курса...").size(large), props.logout)
     }
   }
 

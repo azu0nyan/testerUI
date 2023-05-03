@@ -27,8 +27,8 @@ import typings.react.mod.CSSProperties
   case class Props(ps: ProblemScore, hasAnswers: Boolean, haveWaitingConfirmAnswer: Boolean)
 
   def acceptNotAcceptText(passed: Boolean) =
-    if (passed) b(style := js.Dynamic.literal(color = "green"))("Зачтено")
-    else b(style := js.Dynamic.literal(color = "red"))("Не зачтено")
+    if (passed) b(style := js.Dynamic.literal(color = Helpers.customSuccessColor))("Зачтено")
+    else b(style := js.Dynamic.literal(color = Helpers.customErrorColor))("Не зачтено")
 
   val component = FunctionalComponent[Props] { props =>
     //    val text = props.ps match {
@@ -43,20 +43,20 @@ import typings.react.mod.CSSProperties
     ))(if (props.ps.isMax) {
       props.ps match {
         case ProblemScore.BinaryScore(passed) => acceptNotAcceptText(passed)
-        case _ => problemScoreElement(props.ps.toPrettyString, props.ps.percentage, "green")
+        case _ => problemScoreElement(props.ps.toPrettyString, props.ps.percentage, Helpers.customSuccessColor)
       }
     } else if (props.haveWaitingConfirmAnswer) {
       div(style := js.Dynamic.literal(
-        color = "yellow"
+        color = Helpers.customWarningColor
       ))(b("Ожидает подтверждаения преподавателем"))
     } else if (props.ps.toInt == 0 && !props.hasAnswers) {
       div(style := js.Dynamic.literal(
-        color = "red"
+        color = Helpers.customErrorColor
       ))(b("Нет ответа"))
     } else {
       props.ps match {
         case ProblemScore.BinaryScore(passed) => acceptNotAcceptText(passed)
-        case _ => problemScoreElement(props.ps.toPrettyString, props.ps.percentage, if (props.ps.toInt == 0) "red" else "yellow")
+        case _ => problemScoreElement(props.ps.toPrettyString, props.ps.percentage, if (props.ps.toInt == 0) Helpers.customErrorColor else Helpers.customWarningColor)
       }
     })
 

@@ -77,7 +77,9 @@ import viewData.CourseInfoViewData
         case clientRequests.GetCoursesListFailure(fal) => //todo
       })
     }, Seq())
-
+    
+    
+    
     Layout()(
       leftSider(coursesList, x => setSelectedCourse(Some(x))),
       content(coursesList, selectedCourse),

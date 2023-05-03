@@ -11,7 +11,7 @@ import slinky.core.facade.{React, ReactElement}
 import slinky.core.facade.ReactContext.RichReactContext
 import tester.ui.components.Helpers.SetInnerHtml
 import tester.ui.requests.Helpers.sendRequest
-import typings.antd.antdStrings.{dark, large}
+import typings.antd.antdStrings.{dark, large, primary}
 import typings.antd.components.{List => AntList, _}
 import typings.rcMenu.esInterfaceMod
 import typings.react.mod.CSSProperties
@@ -19,7 +19,7 @@ import viewData.{CourseInfoViewData, PartialCourseViewData, ProblemRefViewData, 
 
 
 @react object DisplayPartialCourse {
-  case class Props(loggedInUser: LoggedInUser, partialCourse: PartialCourseViewData)
+  case class Props(loggedInUser: LoggedInUser, partialCourse: PartialCourseViewData, logout: () => Unit)
 
   case class LoadedProblemData(pvd: ProblemViewData, answerInField: String)
 
@@ -33,7 +33,7 @@ import viewData.{CourseInfoViewData, PartialCourseViewData, ProblemRefViewData, 
     val (leftCollapsed, setLeftCollapsed) = useState[Boolean](false)
     val (rightCollapsed, setRightCollapsed) = useState[Boolean](false)
 
-    val (appMode, setAppMode) = useState[DisplayAppMode](DisplayCourseAndProblem)
+    val (appMode, setAppMode) = useState[DisplayAppMode](DisplayCourseMode)
     val (loadedProblems, setLoadedProblems) = useState[Map[String, LoadedProblemData]](Map[String, LoadedProblemData]())
 
     val (selectedProblem, setSelectedProblemInner) = useState[Option[ProblemRefViewData]](None)
@@ -115,11 +115,12 @@ import viewData.{CourseInfoViewData, PartialCourseViewData, ProblemRefViewData, 
     })
 
 
-    Layout().style(CSSProperties().setMinHeight("100vh"))(
+    val content = Layout().style(CSSProperties().setMinHeight("100vh"))(
       Layout.Sider()
         .collapsible(true)
         .collapsed(leftCollapsed)
         .collapsedWidth(0)
+        .width(300)
         .zeroWidthTriggerStyle(CSSProperties().setTop("0px"))
 //        .trigger(div("Показать"))
         .onCollapse((b, _) => setLeftCollapsed(b))(
@@ -131,14 +132,28 @@ import viewData.{CourseInfoViewData, PartialCourseViewData, ProblemRefViewData, 
         .collapsible(true)
         .collapsed(rightCollapsed)
         .collapsedWidth(0)
+        .width(300)
         .zeroWidthTriggerStyle(CSSProperties().setRight("0px").setTop("0px"))
 //        .trigger(div("Показать"))
         .onCollapse((b, _) => setRightCollapsed(b))(
         CourseProblemSelector(props.partialCourse, spRef => setSelectedProblem(Some(spRef)))
       ),
-
-
     )
+
+    val headerContent = Button().`type`(primary).onClick(_ => appMode match {
+      case DisplayCourseMode => setAppMode(DisplayCourseAndProblem)
+      case DisplayProblemMode => setAppMode(DisplayCourseAndProblem)
+      case DisplayCourseAndProblem  =>
+        if (selectedProblem.nonEmpty )setAppMode(DisplayProblemMode)
+        else  setAppMode(DisplayCourseMode)
+    })(appMode match {
+      case DisplayCourseMode => "Двойное отображение"
+      case DisplayProblemMode => "Двойное отображение"
+      case DisplayCourseAndProblem => "Одинарное отображение"
+    })
+
+
+    Helpers.basicLayout(content, props.logout, headerContent)
   }
 
 

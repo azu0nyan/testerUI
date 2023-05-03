@@ -46,9 +46,9 @@ import viewData.{PartialCourseViewData, ProblemRefViewData}
         val progress = pieceProgress(c)
         val text = s"$progress/$problemsTotal"
         val (bgCol, col) = {
-          if (progress == problemsTotal) ("green", "white")
-          else if (progress == 0) ("red", "white")
-          else ("yellow", "white")
+          if (progress == problemsTotal) (Helpers.customSuccessColor, "white")
+          else if (progress == 0) (Helpers.customErrorColor, "white")
+          else (Helpers.customWarningColor, "white")
         }
 
         SubMenu.withKey(c.alias)
@@ -74,9 +74,9 @@ import viewData.{PartialCourseViewData, ProblemRefViewData}
       props.pcvd.refByAlias(p.alias) match {
         case Some(pref) =>
           val (bgCol, col) = {
-            if (pref.score.isMax) ("green", "white")
-            else if (pref.score.toInt == 0) ("red", "white")
-            else ("yellow", "white")
+            if (pref.score.isMax) (Helpers.customSuccessColor, "white")
+            else if (pref.score.toInt == 0) (Helpers.customErrorColor, "white")
+            else (Helpers.customWarningColor, "white")
           }
           if (pref.score.isMax) {
             MenuItem.withKey(p.alias)({

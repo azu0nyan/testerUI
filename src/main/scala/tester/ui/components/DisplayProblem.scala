@@ -197,21 +197,21 @@ import java.time.Instant
     def toItem(id: Int, r: ProgramRunResult): RunResultsTableItem = r match {
       case ProgramRunResult.ProgramRunResultSuccess(timeMS, message) =>
         new RunResultsTableItem(id,
-          div(style := js.Dynamic.literal(color = "green"))(s"$timeMS мс."),
+          div(style := js.Dynamic.literal(color = Helpers.customSuccessColor))(s"$timeMS мс."),
           message match {
             case Some(value) if value.nonEmpty =>
-              displayOrModal(value, v => pre(code(style := js.Dynamic.literal(color = "green"), dangerouslySetInnerHTML := new SetInnerHtml(v))()),
+              displayOrModal(value, v => pre(code(style := js.Dynamic.literal(color = Helpers.customSuccessColor), dangerouslySetInnerHTML := new SetInnerHtml(v))()),
                 "Показать системное сообщение", "Системное сообщение", newLinesMax = 8)
             case _ => div("")
           }
         )
       case ProgramRunResult.ProgramRunResultWrongAnswer(message) =>
         new RunResultsTableItem(id,
-          div(style := js.Dynamic.literal(color = "red"))(s"Неверный ответ."),
+          div(style := js.Dynamic.literal(color = Helpers.customErrorColor))(s"Неверный ответ."),
           message match {
             case Some(value) if value.nonEmpty =>
               Fragment(div("Неверный ответ"),
-                displayOrModal(value, v => pre(code(style := js.Dynamic.literal(color = "red"), dangerouslySetInnerHTML := new SetInnerHtml(v))()),
+                displayOrModal(value, v => pre(code(style := js.Dynamic.literal(color = Helpers.customErrorColor), dangerouslySetInnerHTML := new SetInnerHtml(v))()),
                   "Посмотреть", "Неверный ответ", newLinesMax = 8)
               )
             case _ => div("Неверный ответ")
@@ -219,20 +219,20 @@ import java.time.Instant
         )
       case ProgramRunResult.ProgramRunResultFailure(message) =>
         new RunResultsTableItem(id,
-          div(style := js.Dynamic.literal(color = "red"))(s"Ошибка."),
+          div(style := js.Dynamic.literal(color = Helpers.customErrorColor))(s"Ошибка."),
           message match {
             case Some(value) if value.nonEmpty =>
               Fragment(div("Ошибка во время исполнения"),
-                displayOrModal(value, v => pre(code(style := js.Dynamic.literal(color = "red"), dangerouslySetInnerHTML := new SetInnerHtml(v))()),
+                displayOrModal(value, v => pre(code(style := js.Dynamic.literal(color = Helpers.customErrorColor), dangerouslySetInnerHTML := new SetInnerHtml(v))()),
                   "Посмотреть", "Ошибка во время исполнения", newLinesMax = 8)
               )
             case _ => div("Ошибка во время исполнения")
           }
         )
       case ProgramRunResult.ProgramRunResultTimeLimitExceeded(timeMs) =>
-        new RunResultsTableItem(id, div(style := js.Dynamic.literal(color = "red"))(s"$timeMs мс."), div("Превышено время исполнения"))
+        new RunResultsTableItem(id, div(style := js.Dynamic.literal(color = Helpers.customErrorColor))(s"$timeMs мс."), div("Превышено время исполнения"))
       case ProgramRunResult.ProgramRunResultNotTested() =>
-        new RunResultsTableItem(id, div(style := js.Dynamic.literal(color = "yellow"))("Не протестированно"), div("Программа должна пройти все предыдущие тесты"))
+        new RunResultsTableItem(id, div(style := js.Dynamic.literal(color = Helpers.customWarningColor))("Не протестированно"), div("Программа должна пройти все предыдущие тесты"))
     }
     import typings.antd.libTableInterfaceMod.{ColumnGroupType, ColumnType}
 
@@ -313,7 +313,7 @@ import java.time.Instant
 
     def answerStatusColumn(status: AnswerStatus) = div(status match {
       case VerifiedAwaitingConfirmation(score, systemMessage, verifiedAt) =>
-        p(style := js.Dynamic.literal(color = "yellow"))("Ожидает подтвержденя преподавателем")
+        p(style := js.Dynamic.literal(color = Helpers.customWarningColor))("Ожидает подтвержденя преподавателем")
       case CourseShared.Verified(score, review, systemMessage, verifiedAt, confirmedAt) =>
         score match {
           case ProblemScore.MultipleRunsResultScore(runResults) =>
@@ -327,8 +327,8 @@ import java.time.Instant
         systemMessage match {
           case Some(value) =>
             div(
-              p(style := js.Dynamic.literal(color = "red"))("Отклонено"), {
-                val fullMessage = pre(code(style := js.Dynamic.literal(color = "red"), dangerouslySetInnerHTML := new SetInnerHtml(value))())
+              p(style := js.Dynamic.literal(color = Helpers.customErrorColor))("Отклонено"), {
+                val fullMessage = pre(code(style := js.Dynamic.literal(color = Helpers.customErrorColor), dangerouslySetInnerHTML := new SetInnerHtml(value))())
                 if (value.length < 500 && value.count(_ == '\n') < 20) {
                   fullMessage
                 } else {
@@ -338,12 +338,12 @@ import java.time.Instant
                 }
               }
             )
-          case None => (p(style := js.Dynamic.literal(color = "red"))("Отклонено"))
+          case None => (p(style := js.Dynamic.literal(color = Helpers.customErrorColor))("Отклонено"))
         }
       case CourseShared.BeingVerified() =>
-        p(style := js.Dynamic.literal(color = "yellow"))("Проверяется")
+        p(style := js.Dynamic.literal(color = Helpers.customWarningColor))("Проверяется")
       case CourseShared.VerificationDelayed(systemMessage) =>
-        p(style := js.Dynamic.literal(color = "yellow"))("Проверка отложена. " + systemMessage.getOrElse(""))
+        p(style := js.Dynamic.literal(color = Helpers.customWarningColor))("Проверка отложена. " + systemMessage.getOrElse(""))
     })
 
     def systemMessageColumn(tableItem: AnswersTableItem) = {

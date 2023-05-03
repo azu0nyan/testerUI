@@ -8,7 +8,8 @@ import scala.util.{Failure, Success}
 
 object Helpers {
 
-  def host = "http://tester:8007/"
+//  def host = "http://tester:8007/"
+  def host = "https://tester.lnmo.ru/"
 
   import scala.concurrent.ExecutionContext.Implicits.global
 
