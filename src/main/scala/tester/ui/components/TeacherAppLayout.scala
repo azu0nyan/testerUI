@@ -21,13 +21,13 @@ import viewData.GroupDetailedInfoViewData
   case class Props(loggedInUser: LoggedInUser, logout: () => Unit)
 
   sealed trait TeacherAppState
-  case object WelcomeScreen extends TeacherAppState
-  case class GroupInfo(groupId: String) extends TeacherAppState
-  case class GroupResultsTable(groupId: String) extends TeacherAppState
+  case object WelcomeScreenTeacherAppState extends TeacherAppState
+  case class GroupInfoTeacherAppState(groupId: String) extends TeacherAppState
+  case class GroupResultsTableTeacherAppState(groupId: String) extends TeacherAppState
 
   val component = FunctionalComponent[Props] { props =>
 
-    val (state, setState) = useState[TeacherAppState](WelcomeScreen)
+    val (state, setState) = useState[TeacherAppState](WelcomeScreenTeacherAppState)
     val (groups, setGroups) = useState[Seq[viewData.GroupDetailedInfoViewData]](Seq())
 
     useEffect(() => {
@@ -47,8 +47,8 @@ import viewData.GroupDetailedInfoViewData
       Menu().theme(antdStrings.dark).mode(esInterfaceMod.MenuMode.inline) /*.defaultSelectedKeys(js.Array("1"))*/ (
         SubMenu.withKey("main").title("Группы")(
           groups.map(group => SubMenu.withKey(group.groupId).title(group.groupTitle)(
-            MenuItem.withKey(group.groupId + "about").onClick(_ => setState(GroupInfo(group.groupId)))("О группе"),
-            MenuItem.withKey(group.groupId + "results").onClick(_ => setState(GroupResultsTable(group.groupId)))("Результаты"),
+            MenuItem.withKey(group.groupId + "about").onClick(_ => setState(GroupInfoTeacherAppState(group.groupId)))("О группе"),
+            MenuItem.withKey(group.groupId + "results").onClick(_ => setState(GroupResultsTableTeacherAppState(group.groupId)))("Результаты"),
           ))
         )
       )
@@ -63,20 +63,20 @@ import viewData.GroupDetailedInfoViewData
         ),
         Layout.Content(
           state match {
-            case WelcomeScreen =>
+            case WelcomeScreenTeacherAppState =>
               Card.bordered(true)
                 .style(CSSProperties())(
                   Title.level(antdInts.`1`)("Добро пожаловать"),
                   p("Вас привествует интерфейс учителя на tester.lnmo.ru . Выберите группу или курс для работы в меню слева.")
                 )
-            case GroupInfo(groupId) =>
+            case GroupInfoTeacherAppState(groupId) =>
               groups.find(_.groupId == groupId) match {
                 case Some(gvd) => GroupDetailedInfo(gvd)
                 case None => div(s"Группа $groupId не найдена.")
               }
-            case GroupResultsTable(groupId) =>
+            case GroupResultsTableTeacherAppState(groupId) =>
               groups.find(_.groupId == groupId) match {
-                case Some(gvd) => div(s"Результаты группы ${gvd.groupTitle}")
+                case Some(gvd) => GroupResultsTable(props.loggedInUser, gvd)
                 case None => div(s"Группа $groupId не найдена.")
               }
           }

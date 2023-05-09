@@ -28,6 +28,7 @@ lazy val baseSettings: Project => Project =
       scalaJSLinkerConfig := scalaJSLinkerConfig.value.withSourceMap(false),
       /* for slinky */
       scalacOptions += "-Ymacro-annotations",
+      scalacOptions += "-Ylog-classpath",
       stFlavour := Flavour.Slinky,
       useYarn := true,
 
