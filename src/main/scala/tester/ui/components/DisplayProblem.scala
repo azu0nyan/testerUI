@@ -11,11 +11,11 @@ import slinky.core.WithAttrs.build
 
 import scala.scalajs.js
 import slinky.core._
-import slinky.web.html.{code, _}
+import slinky.web.html._
 import slinky.core.annotations.react
 import slinky.core.facade.Hooks.{useEffect, useState}
 import tester.ui.components.DisplayPartialCourse.LoadedProblemData
-import tester.ui.requests.Helpers.sendRequest
+import tester.ui.requests.Request.sendRequest
 import typings.antd.components.{List => AntList, _}
 import typings.antd.antdStrings.{horizontal, primary, topRight}
 import typings.betterReactMathjax.components.MathJaxContext.configMathJax3Configundef

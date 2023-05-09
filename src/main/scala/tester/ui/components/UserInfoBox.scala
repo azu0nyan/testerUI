@@ -28,7 +28,7 @@ import viewData.UserViewData
           Descriptions.Item().label("Почта")(props.u.email.getOrElse("").asInstanceOf[String]),
           Descriptions.Item().label("Дата регистрации")(props.u.registeredAt.toString),
           Descriptions.Item().label("Роль")(props.u.role),
-          Descriptions.Item().label("Группы")(props.u.groups.mkString(", ")),
+          Descriptions.Item().label("Группы")(props.u.groups.map(_.groupTitle).mkString(", ")),
         )
       )
 

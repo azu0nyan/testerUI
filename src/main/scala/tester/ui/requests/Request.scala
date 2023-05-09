@@ -6,7 +6,7 @@ import org.scalajs.dom.ext.Ajax
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
 
-object Helpers {
+object Request {
 
 //  def host = "http://tester:8007/"
   def host = "https://tester.lnmo.ru/"

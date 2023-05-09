@@ -9,7 +9,7 @@ import slinky.core.annotations.react
 import slinky.core.facade.Hooks.{useEffect, useState}
 import slinky.core.facade.React
 import slinky.core.facade.ReactContext.RichReactContext
-import tester.ui.requests.Helpers.sendRequest
+import tester.ui.requests.Request.sendRequest
 import typings.antd.antdStrings.large
 import typings.antd.components.{List => AntList, _}
 import viewData.{CourseInfoViewData, PartialCourseViewData}

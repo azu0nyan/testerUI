@@ -10,7 +10,7 @@ import slinky.web.html._
 import slinky.core.annotations.react
 import slinky.core.facade.Hooks.{useEffect, useState}
 import tester.ui.DateFormat
-import tester.ui.requests.Helpers.sendRequest
+import tester.ui.requests.Request.sendRequest
 import typings.antd.antdStrings.{dark, large, primary}
 import typings.antd.{antdStrings, libSpaceMod}
 import typings.antd.components.{List => AntList, _}

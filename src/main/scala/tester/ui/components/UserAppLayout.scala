@@ -21,9 +21,6 @@ import viewData.{CourseInfoViewData, PartialCourseViewData, ProblemRefViewData, 
   val component = FunctionalComponent[Props] { props =>
     val (selectedCourse, setSelectedCourse) = useState[Option[CourseInfoViewData]](None)
 
-
-
-
     selectedCourse match {
       case Some(course) => CourseLoaderLayout(props.loggedInUser, course, props.logout)
       case None => Helpers.basicLayout(CourseSelectionLayout(loggedInUser = props.loggedInUser, onSelected = s => setSelectedCourse(Some(s))), props.logout)
