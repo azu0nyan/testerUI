@@ -41,7 +41,7 @@ case class NoUser() extends UserAppData
 
   val component = FunctionalComponent[Props] { props =>
     val (loggedInUser, setLoggedInUser) = useState[UserAppData](NoUser())
-    val (appState, setAppState) = useState[ApplicationState](TeacherAppState)
+    val (appState, setAppState) = useState[ApplicationState](StudentAppState)
 
 
     def tryLogin(lp: LoginForm.LoginPassword): Unit = {
@@ -67,7 +67,7 @@ case class NoUser() extends UserAppData
         loggedInUser match {
           case l: LoggedInUser =>
             appState match {
-              case StudentAppState => UserAppLayout(l, logout = () => setLoggedInUser(NoUser()))
+              case StudentAppState => UserAppLayout(l, logout = () => setLoggedInUser(NoUser()), setAppState)
               case TeacherAppState => TeacherAppLayout(l, logout = () => setLoggedInUser(NoUser()))
 
 //                div("Teacher UI")

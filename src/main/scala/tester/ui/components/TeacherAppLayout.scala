@@ -29,6 +29,7 @@ import viewData.GroupDetailedInfoViewData
 
     val (state, setState) = useState[TeacherAppState](WelcomeScreenTeacherAppState)
     val (groups, setGroups) = useState[Seq[viewData.GroupDetailedInfoViewData]](Seq())
+    val (leftCollapsed, setLeftCollapsed) = useState[Boolean](false)
 
     useEffect(() => {
       Request.sendRequest(clientRequests.admin.GroupList, clientRequests.admin.GroupListRequest(props.loggedInUser.token))(
@@ -56,9 +57,15 @@ import viewData.GroupDetailedInfoViewData
 
 
     Layout()(
-      Layout.Header(),
+      //Layout.Header(),
       Layout(
-        Layout.Sider.style(CSSProperties().setHeight("100vh").setMaxHeight("100vh").setOverflowY(OverflowYProperty.scroll))(
+        Layout.Sider
+          .collapsible(true)
+          .collapsed(leftCollapsed)
+          .onCollapse((b, _) => setLeftCollapsed(b))
+          .collapsedWidth(0)
+//          .zeroWidthTriggerStyle(CSSProperties().setTop("0px"))
+          .style(CSSProperties().setHeight("100vh").setMaxHeight("100vh").setOverflowY(OverflowYProperty.scroll))(
           siderGroupMenu
         ),
         Layout.Content(
@@ -82,7 +89,7 @@ import viewData.GroupDetailedInfoViewData
           }
         )
       ),
-      Layout.Footer()
+      //Layout.Footer()
     )
   }
 }

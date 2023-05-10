@@ -9,6 +9,7 @@ import slinky.core.annotations.react
 import slinky.core.facade.Hooks.{useEffect, useState}
 import slinky.core.facade.{React, ReactElement}
 import slinky.core.facade.ReactContext.RichReactContext
+import tester.ui.components.Application.ApplicationState
 import tester.ui.components.Helpers.SetInnerHtml
 import tester.ui.requests.Request.sendRequest
 import typings.antd.antdStrings.{dark, large, primary}
@@ -19,7 +20,7 @@ import viewData.{CourseInfoViewData, PartialCourseViewData, ProblemRefViewData, 
 
 
 @react object DisplayPartialCourse {
-  case class Props(loggedInUser: LoggedInUser, partialCourse: PartialCourseViewData, logout: () => Unit)
+  case class Props(loggedInUser: LoggedInUser, partialCourse: PartialCourseViewData, logout: () => Unit, setAppState: ApplicationState => Unit)
 
   case class LoadedProblemData(pvd: ProblemViewData, answerInField: String)
 
@@ -119,11 +120,10 @@ import viewData.{CourseInfoViewData, PartialCourseViewData, ProblemRefViewData, 
       Layout.Sider()
         .collapsible(true)
         .collapsed(leftCollapsed)
+        .onCollapse((b, _) => setLeftCollapsed(b))
         .collapsedWidth(0)
         .width(300)
-        .zeroWidthTriggerStyle(CSSProperties().setTop("0px"))
-//        .trigger(div("Показать"))
-        .onCollapse((b, _) => setLeftCollapsed(b))(
+        .zeroWidthTriggerStyle(CSSProperties().setTop("0px"))        (
         CourseContents(props.partialCourse, cp => setSelectedCoursePiece(cp))
       ),
       displayContent(),
@@ -153,7 +153,7 @@ import viewData.{CourseInfoViewData, PartialCourseViewData, ProblemRefViewData, 
     })
 
 
-    Helpers.basicLayout(content, props.logout, headerContent)
+    Helpers.basicLayout(content, props.logout, headerContent, props.loggedInUser, props.setAppState)
   }
 
 

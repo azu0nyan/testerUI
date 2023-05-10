@@ -9,6 +9,7 @@ import slinky.core.annotations.react
 import slinky.core.facade.Hooks.{useEffect, useState}
 import slinky.core.facade.React
 import slinky.core.facade.ReactContext.RichReactContext
+import tester.ui.components.Application.ApplicationState
 import tester.ui.requests.Request.sendRequest
 import typings.antd.antdStrings.large
 import typings.antd.components.{List => AntList, _}
@@ -16,7 +17,7 @@ import viewData.{CourseInfoViewData, PartialCourseViewData}
 
 
 @react object CourseLoaderLayout {
-  case class Props(loggedInUser: LoggedInUser, courseInfo: CourseInfoViewData, logout: () => Unit)
+  case class Props(loggedInUser: LoggedInUser, courseInfo: CourseInfoViewData, logout: () => Unit, setAppState: ApplicationState => Unit)
 
   val component = FunctionalComponent[Props] { props =>
     val (courseData, setCourseData) = useState[Option[PartialCourseViewData]](None)
@@ -36,9 +37,9 @@ import viewData.{CourseInfoViewData, PartialCourseViewData}
 
     courseData match {
       case Some(p) =>
-        DisplayPartialCourse(props.loggedInUser, p, props.logout)
+        DisplayPartialCourse(props.loggedInUser, p, props.logout, props.setAppState)
       case None =>
-        Helpers.basicLayout(Spin().tip(s"Загрузка курса...").size(large), props.logout)
+        Helpers.basicLayout(Spin().tip(s"Загрузка курса...").size(large), props.logout, div(), props.loggedInUser, props.setAppState)
     }
   }
 
