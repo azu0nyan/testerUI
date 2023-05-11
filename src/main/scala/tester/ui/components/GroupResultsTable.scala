@@ -2,12 +2,13 @@ package tester.ui.components
 
 
 import clientRequests.watcher.{LightGroupScoresRequest, LightGroupScoresSuccess, UnknownLightGroupScoresFailure}
+import otsbridge.CoursePiece.CourseRoot
 import otsbridge.ProblemScore.ProblemScore
 import slinky.core.WithAttrs.build
 
 import scala.scalajs.js
 import slinky.core._
-import slinky.web.html._
+import slinky.web.html.{h5, _}
 import typings.antd.components._
 import typings.antd.{antdBooleans, antdInts, antdStrings}
 import slinky.core.annotations.react
@@ -20,7 +21,7 @@ import typings.csstype.mod.WhiteSpaceProperty.nowrap
 import typings.rcTable.anon.X
 import typings.rcTable.{libInterfaceMod, rcTableStrings}
 import typings.react.mod.CSSProperties
-import viewData.{GroupDetailedInfoViewData, UserViewData}
+import viewData.{CourseTemplateViewData, GroupDetailedInfoViewData, UserViewData}
 
 import scala.scalajs.js.|
 
@@ -63,15 +64,17 @@ import scala.scalajs.js.|
       }.toSeq
 
 
-      val columns = Seq(
-        ColumnType[UserTableItem]()
-          .setTitle(h5("Имя"))
-          .setWidth("150px")
-          .setDataIndex("userName")
-          .setFixed(rcTableStrings.left)
-          .setRender((_, tableItem, _) => h5(style := js.Dynamic.literal(whiteSpace = "nowrap", overflow = "hidden"))(tableItem.userName))) ++
+
+      val nameColumn = ColumnType[UserTableItem]()
+        .setTitle(h5("Имя"))
+        .setWidth("150px")
+        .setDataIndex("userName")
+        .setFixed(rcTableStrings.left)
+        .setRender((_, tableItem, _) => h5(style := js.Dynamic.literal(whiteSpace = "nowrap", overflow = "hidden"))(tableItem.userName))
+
+      val problemColumns =
         loadedData.aliasToTitle.toSeq
-          .sortBy { case (a, t) => props.data.courses.map( c => c.problems.indexOf(a)).minOption.getOrElse(-1) } //todo count course id
+          .sortBy { case (a, t) => props.data.courses.map(c => c.problems.indexOf(a)).minOption.getOrElse(-1) } //todo count course id
           .map { case (alias, title) => ColumnType[UserTableItem]()
             .setTitle(h5(title))
             //          .setTitle(div(h5(style := js.Dynamic.literal( color = "red"))(title)))
@@ -88,6 +91,44 @@ import scala.scalajs.js.|
             })
           }
 
+
+      def courseColumns(c: CourseTemplateViewData): ColumnGroupType[UserTableItem] = {
+//        val (courseData, setCourseData) = useState[Option[CourseRoot]](None)
+
+//        courseData match {
+//          case Some(courseRoot) => ???
+//          case None =>
+            val prows: Seq[ColumnType[UserTableItem]] = c.problems.map(alias =>
+              ColumnType[UserTableItem]()
+                .setTitle(build(h5(loadedData.aliasToTitle.getOrElse(alias, alias).toString)))
+                .setWidth("50px")
+                .setDataIndex(alias)
+                .setKey(alias)
+                .setRender((_, tableItem, _) => h5(style := js.Dynamic.literal(whiteSpace = "nowrap", overflow = "hidden")) {
+
+                  val problemScore = tableItem.problemToScoreId.get(alias)
+                  problemScore match {
+                    case Some((score, _)) => SmallProblemScoreDisplay(score)
+                    case None => div()
+                  }
+                })
+            )
+
+            val castedArray: js.Array[ColumnGroupType[UserTableItem] | ColumnType[UserTableItem]] = js.Array(prows: _ *)
+
+            ColumnGroupType[UserTableItem](castedArray).setTitle(build(h5(c.title))).setKey(c.courseTemplateAlias)
+
+//        }
+      }
+
+      val cc =  props.data.courses.map(courseColumns)//.map(gt => |.from[ColumnGroupType[UserTableItem] ,ColumnGroupType[UserTableItem],ColumnType[UserTableItem]](gt))
+
+      def columns: Seq[ColumnGroupType[UserTableItem] | ColumnType[UserTableItem]] =
+        |.from[ColumnType[UserTableItem] ,ColumnGroupType[UserTableItem],ColumnType[UserTableItem]](nameColumn) +:
+          props.data.courses.map(courseColumns).map(gt => |.from[ColumnGroupType[UserTableItem] ,ColumnGroupType[UserTableItem],ColumnType[UserTableItem]](gt))
+
+      //      val courseColumns = ColumnGroupType[UserTableItem]()
+
       class ScrollSettings(val x: String, val y: String) extends js.Object
 
       Table[UserTableItem]
@@ -98,6 +139,8 @@ import scala.scalajs.js.|
         .pagination(antdBooleans.`false`)
         .scroll(new ScrollSettings("", "80vh").asInstanceOf[js.UndefOr[X] with ScrollToFirstRowOnChange])
         .columnsVarargs(
+//          nameColumn
+//          (nameC/olumn +: cc) : _ *
           columns: _ *
         )
 
