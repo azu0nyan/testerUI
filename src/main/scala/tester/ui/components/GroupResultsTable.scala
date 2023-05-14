@@ -152,8 +152,7 @@ import scala.scalajs.js.|
       .bordered(true)
       .style(CSSProperties().setWidth("100%"))(
         if (loaded) {
-          div(
-            s"${loadedData.userScores.size}",
+          div(          
             table()
           )
         } else {
