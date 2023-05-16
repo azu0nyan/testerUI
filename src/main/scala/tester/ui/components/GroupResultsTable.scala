@@ -54,12 +54,11 @@ import scala.scalajs.js.|
     def table() = {
       class UserTableItem(val userId: String, val userName: String, val problemToScoreId: Map[String, (ProblemScore, String)]) extends js.Object
 
-      def toName(u: UserViewData): String = {
-        val f = (u.lastName.getOrElse("").strip() + " " + u.firstName.getOrElse(" ").strip()).strip()
-        if (f.isEmpty) u.login else f
-      }
+      
 
-      val datasource: Seq[UserTableItem] = loadedData.userScores.map { case (userId, scores) => new UserTableItem(userId, props.data.users.find(_.id == userId).map(toName).getOrElse("Пользователь не найден"),
+      val datasource: Seq[UserTableItem] = loadedData.userScores
+        .map { case (userId, scores) => new UserTableItem(userId, props.data.users.find(_.id == userId)
+          .map(vd => Helpers.toName(vd)).getOrElse("Пользователь не найден"),
         scores.flatMap { case (courseAlias, scores) => scores.map { case (problemAlias, score) => (problemAlias, (score, loadedData.aliasToTitle.get(problemAlias).getOrElse(""))) } })
       }.toSeq
 

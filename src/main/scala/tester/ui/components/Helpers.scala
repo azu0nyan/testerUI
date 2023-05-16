@@ -8,6 +8,7 @@ import typings.csstype.mod.FloatProperty
 import typings.csstype.mod.PositionProperty.fixed
 import typings.react.mod.CSSProperties
 import typings.antd.components.{List => AntList, _}
+import viewData.UserViewData
 
 import scala.scalajs.js
 import scala.sys.props
@@ -64,4 +65,10 @@ object Helpers {
     .setLeft(0)    
     .setTop(headerHeight)
     .setBottom(0)
+
+
+  def toName(u: UserViewData): String = {
+    val f = (u.lastName.getOrElse("").strip() + " " + u.firstName.getOrElse(" ").strip()).strip()
+    if (f.isEmpty) u.login else f
+  }
 }
